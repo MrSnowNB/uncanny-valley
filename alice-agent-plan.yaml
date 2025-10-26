@@ -211,12 +211,11 @@ phase_0_setup:
         - step_id: "T0.2.5"
           action: "Install AI/ML dependencies"
           command: |
-            pip install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu121
-            pip install TTS==0.22.0
-            pip install opencv-python==4.9.0.80
-            pip install librosa==0.10.1 soundfile
+            pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+            pip install pyttsx3
+            pip install opencv-python librosa soundfile
           timeout: 600
-          validation: "python -c 'import torch; import TTS; print(torch.cuda.is_available())'"
+          validation: "python -c 'import torch; import pyttsx3; print(torch.cuda.is_available())'"
           expected: "True"
           on_failure:
             action: "check_troubleshooting"
@@ -232,8 +231,8 @@ phase_0_setup:
           test: "pip show fastapi | grep -q Version"
           criticality: "critical"
         
-        - assertion: "XTTS-v2 installed"
-          test: "python -c 'from TTS.api import TTS'"
+        - assertion: "pyttsx3 installed"
+          test: "python -c 'import pyttsx3'"
           criticality: "critical"
         
         - assertion: "PyTorch CUDA available"
