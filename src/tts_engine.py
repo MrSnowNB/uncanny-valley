@@ -40,13 +40,18 @@ class AliceTTSEngine:
             return
 
         # Configure voice settings from manifest
-        rate = self.voice_settings.get('sample_rate', 22050)
-        self.engine.setProperty('rate', int(rate))  # Default speech rate
+        # Note: pyttsx3 'rate' is speech speed (words per minute), not sample rate
+        # Typical range: 120-200 WPM. Default 200 is often too fast for clarity
+        speech_rate = 180  # Use reasonable speech rate for clear audio
+        self.engine.setProperty('rate', speech_rate)
+
+        # Set volume to maximum (0.0 to 1.0)
+        self.engine.setProperty('volume', 1.0)
 
         # Select female voice if available
         self._select_female_voice()
 
-        print("✅ TTS engine initialized with pyttsx3")
+        print(f"✅ TTS engine initialized with pyttsx3 (rate: {speech_rate} WPM)")
 
     def _select_female_voice(self):
         """Select female voice from available voices"""
