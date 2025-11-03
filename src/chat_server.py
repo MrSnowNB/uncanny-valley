@@ -79,10 +79,21 @@ class ChatStateManager:
         video_state = self.get_video_state_for_message(ollama_response)
 
         # Generate audio
+        print(f"🔊 Generating audio for: '{ollama_response[:50]}...'")
         audio_path = self.tts_engine.synthesize(
             ollama_response,
             output_dir="outputs/audio"
         )
+        print(f"🎵 Audio path returned: {audio_path}")
+
+        if audio_path and os.path.exists(audio_path):
+            audio_size = os.path.getsize(audio_path)
+            print(f"✅ Audio file exists ({audio_size} bytes): {audio_path}")
+        elif audio_path:
+            print(f"⚠️ Audio path returned but file not found: {audio_path}")
+        else:
+            print(f"❌ Audio generation failed - returned None")
+            print(f"   TTS engine state: {self.tts_engine.engine is not None}")
 
         if audio_path:
             # RICo Phase 1: Measure audio duration

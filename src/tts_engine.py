@@ -34,24 +34,38 @@ class AliceTTSEngine:
 
     def _initialize_engine(self):
         """Initialize pyttsx3 engine with Alice's voice characteristics"""
-        self.engine = pyttsx3.init()
-        if self.engine is None:
-            print("Error: Failed to initialize TTS engine")
-            return
+        try:
+            print("🔊 Initializing pyttsx3 TTS engine...")
+            self.engine = pyttsx3.init()
 
-        # Configure voice settings from manifest
-        # Note: pyttsx3 'rate' is speech speed (words per minute), not sample rate
-        # Typical range: 120-200 WPM. Default 200 is often too fast for clarity
-        speech_rate = 180  # Use reasonable speech rate for clear audio
-        self.engine.setProperty('rate', speech_rate)
+            if self.engine is None:
+                print("❌ CRITICAL: pyttsx3.init() returned None")
+                print("   This usually means pyttsx3 failed to find a TTS engine")
+                print("   Possible causes:")
+                print("   - No TTS system installed (eSpeak, NSSpeechSynthesizer, SAPI5)")
+                print("   - Missing system TTS dependencies")
+                print("   - Python environment issues")
+                return
 
-        # Set volume to maximum (0.0 to 1.0)
-        self.engine.setProperty('volume', 1.0)
+            print("✅ pyttsx3 engine initialized successfully")
 
-        # Select female voice if available
-        self._select_female_voice()
+            # Configure voice settings from manifest
+            # Note: pyttsx3 'rate' is speech speed (words per minute), not sample rate
+            # Typical range: 120-200 WPM. Default 200 is often too fast for clarity
+            speech_rate = 180  # Use reasonable speech rate for clear audio
+            self.engine.setProperty('rate', speech_rate)
 
-        print(f"✅ TTS engine initialized with pyttsx3 (rate: {speech_rate} WPM)")
+            # Set volume to maximum (0.0 to 1.0)
+            self.engine.setProperty('volume', 1.0)
+
+            # Select female voice if available
+            self._select_female_voice()
+
+            print(f"✅ TTS engine fully configured (rate: {speech_rate} WPM)")
+
+        except Exception as e:
+            print(f"❌ CRITICAL: pyttsx3 initialization failed with exception: {e}")
+            self.engine = None
 
     def _select_female_voice(self):
         """Select female voice from available voices"""
@@ -104,8 +118,23 @@ class AliceTTSEngine:
             # Save to file directly
             self.engine.save_to_file(text, audio_path)
             self.engine.runAndWait()
-            print(f"✅ Audio generated: {audio_path}")
-            return audio_path
+
+            # pyttsx3.runAndWait() is asynchronous for file I/O - wait for file creation
+            import time
+            timeout = 10  # 10 second timeout
+            start_time = time.time()
+
+            while not os.path.exists(audio_path) and (time.time() - start_time) < timeout:
+                time.sleep(0.1)  # Short wait
+
+            if os.path.exists(audio_path):
+                size = os.path.getsize(audio_path)
+                print(f"✅ Audio generated: {audio_path} ({size} bytes)")
+                return audio_path
+            else:
+                print(f"❌ Audio file timeout: {audio_path} not created after {timeout}s")
+                return None
+
         except Exception as e:
             print(f"Error generating audio: {e}")
             return None
