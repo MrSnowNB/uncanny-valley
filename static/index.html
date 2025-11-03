@@ -290,7 +290,7 @@
                 playAudio(data.audio_url);
             }
 
-            console.log(`🎬 RICo Response: Video=${data.video}, Audio=${data.audio_url}, Duration=${data.duration.toFixed(1)}s`);
+            console.log(`🎬 RICo Response: Video=${data.video}, Audio=${data.audio_url}, Duration=${data.duration ? data.duration.toFixed(1) : 'N/A'}s`);
         }
 
         function displayMessage(text, sender) {
