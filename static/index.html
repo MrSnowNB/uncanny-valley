@@ -258,9 +258,7 @@
         function handleMessage(data) {
             switch(data.type) {
                 case 'ai_response':
-                    displayMessage(data.text, 'alice');
-                    updateVideoState(data);
-                    playAudio(data.audio_url);
+                    handleAliceResponse(data);  // RICo Phase 1: Handle new response format
                     break;
 
                 case 'video_state':
@@ -270,6 +268,29 @@
                 default:
                     console.log('Unknown message type:', data);
             }
+        }
+
+        async function handleAliceResponse(data) {
+            // RICo Phase 1: Direct video URL, not video_state
+            // data = { audio_url, video, text, duration }
+
+            // Add message to chat
+            displayMessage(data.text, 'alice');
+
+            // RICo Phase 1: Load duration-matched video directly
+            if (data.video) {
+                videoElement.src = data.video;
+                videoElement.loop = false;  // Backend created exact-duration clip
+                videoElement.muted = true;
+                await videoElement.load();  // Ensure video loads
+            }
+
+            // Load and play audio
+            if (data.audio_url) {
+                playAudio(data.audio_url);
+            }
+
+            console.log(`🎬 RICo Response: Video=${data.video}, Audio=${data.audio_url}, Duration=${data.duration.toFixed(1)}s`);
         }
 
         function displayMessage(text, sender) {

@@ -8,15 +8,19 @@ from contextlib import asynccontextmanager
 import json
 import uuid
 from typing import Dict, Set, List
+from pathlib import Path
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from pydantic import BaseModel
 
 from .tts_engine import AliceTTSEngine
+from .video_duration_matcher import VideoDurationMatcher
+import librosa  # Audio duration measurement
 import yaml
 import requests
+import os
 
 # Load configuration
 with open('data/video_manifest.yaml', 'r') as f:
@@ -26,6 +30,7 @@ with open('data/video_manifest.yaml', 'r') as f:
 class ChatStateManager:
     def __init__(self):
         self.tts_engine = AliceTTSEngine()
+        self.video_matcher = VideoDurationMatcher()  # RICo Phase 1: Duration matching
         self.state_transitions = MANIFEST.get('state_transitions', {})
         self.video_states = MANIFEST.get('video_clips', {})
         self.active_clients: Set[WebSocket] = set()
@@ -79,19 +84,37 @@ class ChatStateManager:
             output_dir="outputs/audio"
         )
 
-        # Send both audio and video state
         if audio_path:
-            audio_url = f"/audio/{audio_path.split('/')[-1]}"
-        else:
-            audio_url = None
+            # RICo Phase 1: Measure audio duration
+            audio_duration = librosa.get_duration(filename=audio_path)
 
-        return {
-            "type": "ai_response",
-            "audio_url": audio_url,
-            "video_state": video_state,
-            "text": ollama_response,
-            "loop": self.video_states[video_state].get("loop", False)
-        }
+            # RICo Phase 1: Create duration-matched video
+            video_path = self.video_matcher.create_duration_matched_clip(
+                emotion_state=video_state,
+                target_duration=audio_duration
+            )
+
+            return {
+                "type": "ai_response",
+                "audio_url": f"/audio/{os.path.basename(audio_path)}",
+                "video": f"/ricovideos/{os.path.basename(video_path)}",
+                "text": ollama_response,
+                "duration": audio_duration
+            }
+        else:
+            # Handle case where audio generation failed
+            video_path = self.video_matcher.create_duration_matched_clip(
+                emotion_state=video_state,
+                target_duration=3.0  # Default short duration
+            )
+
+            return {
+                "type": "ai_response",
+                "audio_url": None,
+                "video": f"/video/{os.path.basename(video_path)}",
+                "text": ollama_response,
+                "duration": 3.0
+            }
 
     def call_ollama(self, user_message: str) -> str:
         """Call Ollama API for AI response"""
@@ -121,7 +144,22 @@ app = FastAPI(title="Alice in Cyberland Chat")
 # Serve static files
 app.mount("/static", StaticFiles(directory="static", html=True), name="static")
 app.mount("/audio", StaticFiles(directory="outputs/audio"), name="audio")
+# Note: /video serves the original clips, /ricovideos serves generated duration-matched videos
 app.mount("/video", StaticFiles(directory="data/video_clips"), name="video")
+app.mount("/ricovideos", StaticFiles(directory="outputs/video"), name="ricovideos")
+
+@app.get("/ricovideos/{filename}")
+async def serve_rico_video(filename: str):
+    """Serve RICo-generated duration-matched video files"""
+    from fastapi.responses import FileResponse
+    video_path = Path("outputs/video") / filename
+    if video_path.exists():
+        return FileResponse(video_path, media_type="video/mp4")
+    # Fallback to .mov extension (depending on FFmpeg output)
+    video_path_mov = Path("outputs/video") / Path(filename).with_suffix('.mov')
+    if video_path_mov.exists():
+        return FileResponse(video_path_mov, media_type="video/mp4")
+    return JSONResponse({"error": "RICo video not found"}, status_code=404)
 
 # WebSocket endpoint
 @app.websocket("/ws/chat")
