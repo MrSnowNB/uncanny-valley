@@ -168,13 +168,18 @@ async def chat_websocket(websocket: WebSocket):
     state_manager.active_clients.add(websocket)
 
     try:
-        # Send welcome message
+        # Send welcome message with greeting clip
+        greeting_clip = state_manager.video_matcher.create_duration_matched_clip(
+            emotion_state="greeting",
+            target_duration=6.0  # Standard greeting duration
+        )
+
         await websocket.send_json({
             "type": "ai_response",
-            "video_state": "greeting",
+            "video": f"/ricovideos/{os.path.basename(greeting_clip)}",
             "text": "Hello! I'm Alice, your guide to Cyberland. How can I help you today?",
             "audio_url": None,
-            "loop": False
+            "duration": 6.0
         })
 
         while True:
