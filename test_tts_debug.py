@@ -36,14 +36,15 @@ except Exception as e:
 # Test basic properties
 try:
     voices = engine.getProperty('voices')
-    print(f"✅ Found {len(voices) if voices else 0} voices")
+    voices_list = voices if isinstance(voices, (list, tuple)) else []
+    print(f"✅ Found {len(voices_list)} voices")
 
     rate = engine.getProperty('rate')
     print(f"✅ Current rate: {rate}")
 
-    if voices:
+    if voices_list:
         print("🎤 Available voices:")
-        for i, voice in enumerate(voices[:5]):  # Show first 5
+        for i, voice in enumerate(voices_list[:5]):  # Show first 5
             age = getattr(voice, 'age', 'unknown')
             gender = getattr(voice, 'gender', 'unknown')
             print(f"   {i+1}. {voice.name} (age: {age}, gender: {gender})")

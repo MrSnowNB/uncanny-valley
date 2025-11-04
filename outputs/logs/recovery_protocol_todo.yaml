@@ -1,0 +1,120 @@
+# SELF-HEALING RECOVERY PROTOCOL - TASK PROGRESS
+# Date: 2025-11-03
+# Status: ACTIVE
+
+# ============================================================================
+# RECOVERY TASK 0: SYSTEM HEALTH DIAGNOSTIC
+# ============================================================================
+
+task_r0_system_health_check:
+  - [ ] R0.1: Validate Python Environment
+    - [ ] Run python --version (expect Python 3.10+)
+    - [ ] Check virtual environment active
+    - [ ] Verify core dependencies (fastapi, uvicorn, pyttsx3)
+    - [ ] Pass Gate: Python functional
+  - [ ] R0.2: Test Ollama LLM Connection
+    - [ ] Test Ollama API /api/tags endpoint
+    - [ ] Test LLM generation /api/generate
+    - [ ] Pass Gate: Ollama LLM responding
+  - [ ] R0.3: Test TTS Audio Generation
+    - [ ] Generate test audio file with pyttsx3
+    - [ ] Verify file created and size >0
+    - [ ] Pass Gate: TTS generates actual audio files
+  - [ ] R0.4: Test WebSocket Server
+    - [ ] Start server with uvicorn
+    - [ ] Test homepage loads
+    - [ ] Pass Gate: Server starts without errors
+  - [ ] Evaluate Gate R0 overall
+    - [ ] On pass: Proceed to R1
+    - [ ] On fail: Execute self-healing retries
+
+# ============================================================================
+# RECOVERY TASK 1: CODE AUDIT & ERROR DETECTION
+# ============================================================================
+
+task_r1_code_audit:
+  - [ ] R1.1: Audit TTS Implementation in chat_server.py
+    - [ ] Check for save_to_file and runAndWait calls
+    - [ ] Verify audio path handling
+    - [ ] Check output directory creation
+    - [ ] Identify missing TTS code patterns
+  - [ ] R1.2: Audit LLM Integration
+    - [ ] Check LLM call location with grep
+    - [ ] Verify error handling around LLM calls
+    - [ ] Verify timeout handling
+  - [ ] R1.3: Audit Frontend WebSocket Handling
+    - [ ] Check handleAliceResponse function
+    - [ ] Verify null audio checks exist
+  - [ ] Evaluate Gate R1 overall
+    - [ ] Generate fix patches for failed assertions
+    - [ ] On pass: Proceed to R2
+    - [ ] On fail: Apply fixes and proceed to R2
+
+# ============================================================================
+# RECOVERY TASK 2: AUTOMATED CODE REPAIR
+# ============================================================================
+
+task_r2_automated_repairs:
+  - [ ] R2.1: Fix TTS Audio File Generation
+    - [ ] Backup chat_server.py
+    - [ ] Apply TTS file generation patch
+    - [ ] Validate fix with test audio creation
+  - [ ] R2.2: Fix WebSocket Response Format
+    - [ ] Ensure audio path sent to frontend
+    - [ ] Verify proper JSON structure
+  - [ ] R2.3: Add Audio Serving Endpoint
+    - [ ] Create /audio/{filename} endpoint if missing
+    - [ ] Test audio file serving
+  - [ ] R2.4: Add Frontend Null Checks
+    - [ ] Handle null audio gracefully in handleAliceResponse
+    - [ ] Verify graceful degradation
+  - [ ] Evaluate Gate R2 overall
+    - [ ] Restart server and verify no errors
+    - [ ] On pass: Proceed to R3
+    - [ ] On fail: Rollback and escalate
+
+# ============================================================================
+# RECOVERY TASK 3: RUNTIME INTEGRATION TEST
+# ============================================================================
+
+task_r3_integration_test:
+  - [ ] R3.1: Start Production Server
+    - [ ] Kill existing servers
+    - [ ] Start server on port 8080 with logging
+    - [ ] Verify health check passes
+  - [ ] R3.2: Test Scenario 1: Basic Chat Flow
+    - [ ] Manual: Open browser to localhost:8080
+    - [ ] Manual: Send 'Hello Alice' message
+    - [ ] Observe: Video/audio response timing
+    - [ ] Capture console logs and audio file evidence
+  - [ ] R3.3: Test Scenario 2: Multiple Messages
+    - [ ] Send 3 successive messages
+    - [ ] Verify all get audio+video responses
+    - [ ] Check no freezes or crashes
+  - [ ] R3.4: Collect Runtime Metrics
+    - [ ] Count generated audio files
+    - [ ] Measure total audio data size
+    - [ ] Check logs for errors
+  - [ ] Evaluate Gate R3 overall
+    - [ ] On pass: RECOVERY COMPLETE
+    - [ ] On fail: Create full diagnostic package and escalate
+
+# ============================================================================
+# ESCALATION READINESS
+# ============================================================================
+
+escalation_checklist:
+  - [ ] Prepare evidence package for human review
+  - [ ] Document all gate results and failures
+  - [ ] Include screenshots, logs, and reproduction steps
+
+# ============================================================================
+# SUCCESS VALIDATION
+# ============================================================================
+
+recovery_verification:
+  - [ ] All gates passed (R0-R3)
+  - [ ] Audio files >5KB in outputs/audio/
+  - [ ] Browser console shows valid audio URLs
+  - [ ] Live system shows speaking Alice with audio
+  - [ ] Complete diagnostic documentation created

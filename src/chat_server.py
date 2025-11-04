@@ -1,6 +1,9 @@
 """
-Alice in Cyberland - WebSocket Chat Server
+Alice in Cyberland - WebSocket Chat Server with SHRP v1.0 Integration
+SELF-HEALING RECOVERY PROTOCOL (SHRP) v1.0 - Comprehensive Resilience Framework
+
 Handles real-time chat with Ollama, TTS, and video state management
+Integrated with SHRP for self-healing, structured logging, and event emission
 """
 
 import asyncio
@@ -9,6 +12,7 @@ import json
 import uuid
 from typing import Dict, Set, List
 from pathlib import Path
+from datetime import datetime, timezone
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -17,6 +21,11 @@ from pydantic import BaseModel
 
 from .tts_engine import AliceTTSEngine
 from .video_duration_matcher import VideoDurationMatcher
+from .shrp_logger import get_logger, EventType
+from .shrp_checkpoint_manager import get_checkpoint_manager
+from .shrp_recovery_engine import get_recovery_engine
+from .shrp_event_emitter import get_event_emitter
+
 import librosa  # Audio duration measurement
 import yaml
 import requests
@@ -26,15 +35,136 @@ import os
 with open('data/video_manifest.yaml', 'r') as f:
     MANIFEST = yaml.safe_load(f)
 
-# Chat state manager
+# Chat state manager with SHRP v1.0 integration
 class ChatStateManager:
     def __init__(self):
+        # Core components
         self.tts_engine = AliceTTSEngine()
         self.video_matcher = VideoDurationMatcher()  # RICo Phase 1: Duration matching
+
+        # SHRP v1.0 Integration
+        self.logger = get_logger()
+        self.checkpoint_manager = get_checkpoint_manager()
+        self.recovery_engine = get_recovery_engine()
+        self.event_emitter = get_event_emitter()
+
+        # Load configuration
         self.state_transitions = MANIFEST.get('state_transitions', {})
         self.video_states = MANIFEST.get('video_clips', {})
         self.active_clients: Set[WebSocket] = set()
         self.current_video_state = "idle"
+
+        # SHRP Session Management
+        self.session_id = str(uuid.uuid4())
+        self.task_counter = 0
+
+        # System state for checkpointing
+        self.system_state = {
+            "current_video_state": self.current_video_state,
+            "active_clients_count": 0,
+            "total_messages_processed": 0,
+            "last_message_timestamp": None,
+            "recovery_metrics": {},
+            "checkpoint_version": "1.0"
+        }
+
+        # Initialize SHRP systems
+        self._initialize_shrp()
+        self.logger.set_context("component", "chat_server")
+        self.logger.set_context("session_id", self.session_id)
+
+        # Initial checkpoint
+        self._create_checkpoint("system_startup")
+
+        # Session start event
+        self.event_emitter.emit_session_event(
+            EventType.SESSION_START,
+            self.session_id,
+            {"message": "Alice in Cyberland chat server initialized with SHRP v1.0"}
+        )
+
+    def _initialize_shrp(self):
+        """Initialize SHRP v1.0 systems and components"""
+        self.logger.log_event(
+            EventType.SYSTEM_INFO,
+            {
+                "operation": "shrp_initialization",
+                "component": "chat_server",
+                "shrp_version": "1.0"
+            },
+            tags=["initialization", "shrp"]
+        )
+
+        # Verify SHRP component health
+        try:
+            shrp_health = {
+                "logger_active": self.logger is not None,
+                "checkpoint_manager_active": self.checkpoint_manager is not None,
+                "recovery_engine_active": self.recovery_engine is not None,
+                "event_emitter_active": self.event_emitter is not None,
+                "session_initialized": self.session_id is not None
+            }
+
+            self.logger.log_system_health_check(
+                component="shrp_integration",
+                status="healthy" if all(shrp_health.values()) else "degraded",
+                metrics={"components": shrp_health}
+            )
+
+        except Exception as e:
+            self.logger.log_event(
+                EventType.SYSTEM_ERROR,
+                {
+                    "operation": "shrp_initialization",
+                    "error": str(e),
+                    "component": "chat_server"
+                },
+                severity="err",
+                tags=["initialization", "error"]
+            )
+
+    def _create_checkpoint(self, context: str):
+        """Create a system state checkpoint"""
+        try:
+            # Update current system state
+            self.system_state.update({
+                "current_video_state": self.current_video_state,
+                "active_clients_count": len(self.active_clients),
+                "last_checkpoint_context": context,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            })
+
+            # Create checkpoint
+            checkpoint_id = self.checkpoint_manager.create_checkpoint(
+                state=self.system_state.copy(),
+                metadata={
+                    "context": context,
+                    "session_id": self.session_id,
+                    "component": "chat_server"
+                }
+            )
+
+            # Emit checkpoint event
+            self.event_emitter.emit_checkpoint_event(
+                EventType.CHECKPOINT_CREATE,
+                checkpoint_id,
+                {"context": context, "state_keys": list(self.system_state.keys())}
+            )
+
+            return checkpoint_id
+
+        except Exception as e:
+            self.logger.log_event(
+                EventType.SYSTEM_ERROR,
+                {
+                    "operation": "checkpoint_creation",
+                    "context": context,
+                    "error": str(e)
+                },
+                severity="err",
+                tags=["checkpoint", "error"]
+            )
+            return None
 
     async def broadcast(self, message: dict):
         """Broadcast message to all connected clients"""
@@ -64,66 +194,214 @@ class ChatStateManager:
             return "neutral_speaking"
 
     async def handle_user_message(self, user_message: str) -> Dict:
-        """Process user message and generate AI response"""
-        # Change to listening state
-        await self.broadcast({
-            "type": "video_state",
-            "state": "listening",
-            "loop": self.video_states["listening"].get("loop", True)
-        })
+        """Process user message and generate AI response with SHRP monitoring"""
+        task_id = f"task_{self.task_counter}"
+        self.task_counter += 1
 
-        # Get AI response from Ollama
-        ollama_response = self.call_ollama(user_message)
-
-        # Determine video state for response
-        video_state = self.get_video_state_for_message(ollama_response)
-
-        # Generate audio
-        print(f"🔊 Generating audio for: '{ollama_response[:50]}...'")
-        audio_path = self.tts_engine.synthesize(
-            ollama_response,
-            output_dir="outputs/audio"
+        # Log task start
+        self.logger.log_task_start(
+            task_id,
+            "process_user_message",
+            {"user_message": user_message, "length": len(user_message)}
         )
-        print(f"🎵 Audio path returned: {audio_path}")
+        self.event_emitter.emit_task_event(
+            task_id,
+            EventType.TASK_START,
+            "process_user_message",
+            {"user_message": user_message}
+        )
 
-        if audio_path and os.path.exists(audio_path):
-            audio_size = os.path.getsize(audio_path)
-            print(f"✅ Audio file exists ({audio_size} bytes): {audio_path}")
-        elif audio_path:
-            print(f"⚠️ Audio path returned but file not found: {audio_path}")
-        else:
-            print(f"❌ Audio generation failed - returned None")
-            print(f"   TTS engine state: {self.tts_engine.engine is not None}")
+        try:
+            # Change to listening state
+            await self.broadcast({
+                "type": "video_state",
+                "state": "listening",
+                "loop": self.video_states["listening"].get("loop", True)
+            })
 
-        if audio_path:
-            # RICo Phase 1: Measure audio duration
-            audio_duration = librosa.get_duration(filename=audio_path)
-
-            # RICo Phase 1: Create duration-matched video
-            video_path = self.video_matcher.create_duration_matched_clip(
-                emotion_state=video_state,
-                target_duration=audio_duration
+            # Log LLM request start
+            llm_request_id = f"llm_{task_id}"
+            self.logger.set_context("correlation_id", llm_request_id)
+            self.event_emitter.emit_llm_event(
+                EventType.LLM_REQUEST,
+                llm_request_id,
+                {"user_message": user_message, "model": "llama3.1:8b-instruct-q4_K_M"}
             )
 
-            return {
-                "type": "ai_response",
-                "audio_url": f"/audio/{os.path.basename(audio_path)}",
-                "video": f"/ricovideos/{os.path.basename(video_path)}",
-                "text": ollama_response,
-                "duration": audio_duration
-            }
-        else:
-            # Handle case where audio generation failed
-            video_path = self.video_matcher.create_duration_matched_clip(
-                emotion_state=video_state,
-                target_duration=3.0  # Default short duration
+            # Get AI response from Ollama
+            start_time = datetime.now(timezone.utc)
+            ollama_response = self.call_ollama(user_message)
+            end_time = datetime.now(timezone.utc)
+
+            # Log LLM response
+            duration_ms = int((end_time - start_time).total_seconds() * 1000)
+            if ollama_response.startswith("Connection error"):
+                self.event_emitter.emit_llm_event(
+                    EventType.LLM_ERROR,
+                    llm_request_id,
+                    {
+                        "error": "connection_failed",
+                        "response": ollama_response,
+                        "duration_ms": duration_ms
+                    }
+                )
+                # Trigger recovery for LLM failure
+                self.recovery_engine.detect_failure(
+                    "llm_request_failed",
+                    {"request_id": llm_request_id, "error": "connection_failed"},
+                    {"user_message": user_message, "session_id": self.session_id}
+                )
+            else:
+                self.event_emitter.emit_llm_event(
+                    EventType.LLM_RESPONSE,
+                    llm_request_id,
+                    {
+                        "response_length": len(ollama_response),
+                        "duration_ms": duration_ms
+                    }
+                )
+
+            # Determine video state for response
+            video_state = self.get_video_state_for_message(ollama_response)
+
+            # Generate audio with SHRP monitoring
+            tts_request_id = f"tts_{task_id}"
+            self.logger.set_context("correlation_id", tts_request_id)
+            self.event_emitter.emit_tts_event(
+                EventType.TTS_REQUEST,
+                tts_request_id,
+                {"text_length": len(ollama_response)}
             )
 
+            audio_path = self.tts_engine.synthesize(
+                ollama_response,
+                output_dir="outputs/audio"
+            )
+
+            # Validate audio generation
+            audio_success = False
+            audio_size = 0
+            if audio_path and os.path.exists(audio_path):
+                audio_size = os.path.getsize(audio_path)
+                audio_success = audio_size > 1000  # Minimum file size check
+
+            if audio_success:
+                self.event_emitter.emit_tts_event(
+                    EventType.TTS_COMPLETE,
+                    tts_request_id,
+                    {"audio_path": audio_path, "file_size": audio_size}
+                )
+            else:
+                # TTS failure - trigger recovery
+                error_details = {
+                    "request_id": tts_request_id,
+                    "audio_path": audio_path,
+                    "file_exists": os.path.exists(audio_path) if audio_path else False,
+                    "file_size": audio_size if audio_path else 0
+                }
+
+                if audio_path and not os.path.exists(audio_path):
+                    self.event_emitter.emit_tts_event(
+                        EventType.TTS_FILE_MISSING,
+                        tts_request_id,
+                        error_details
+                    )
+                else:
+                    self.event_emitter.emit_tts_event(
+                        EventType.TTS_ERROR,
+                        tts_request_id,
+                        error_details
+                    )
+
+                # Trigger recovery for TTS failure
+                self.recovery_engine.detect_failure(
+                    "tts_generation_failed",
+                    error_details,
+                    {"response_text": ollama_response, "session_id": self.session_id}
+                )
+
+            # Update system state
+            self.system_state["total_messages_processed"] += 1
+            self.system_state["last_message_timestamp"] = datetime.now(timezone.utc).isoformat()
+
+            # Periodic checkpoint (every 10 messages)
+            if self.system_state["total_messages_processed"] % 10 == 0:
+                self._create_checkpoint(f"message_{self.system_state['total_messages_processed']}")
+
+            if audio_success:
+                # RICo Phase 1: Measure audio duration
+                audio_duration = librosa.get_duration(filename=audio_path)
+
+                # RICo Phase 1: Create duration-matched video
+                video_path = self.video_matcher.create_duration_matched_clip(
+                    emotion_state=video_state,
+                    target_duration=audio_duration
+                )
+
+                assert audio_path is not None, "audio_path must not be None in audio_success block"
+                assert video_path is not None, "video_path must not be None in audio_success block"
+
+                response = {
+                    "type": "ai_response",
+                    "audio_url": f"/audio/{os.path.basename(audio_path)}",
+                    "video": f"/ricovideos/{os.path.basename(video_path)}",
+                    "text": ollama_response,
+                    "duration": audio_duration
+                }
+            else:
+                # Handle case where audio generation failed - degrade gracefully
+                video_path = self.video_matcher.create_duration_matched_clip(
+                    emotion_state=video_state,
+                    target_duration=3.0  # Default short duration
+                )
+
+                video_url = f"/video/{os.path.basename(video_path)}" if video_path else "/video/idle-loop.mp4"
+
+                response = {
+                    "type": "ai_response",
+                    "audio_url": None,
+                    "video": video_url,
+                    "text": ollama_response,
+                    "duration": 3.0
+                }
+
+            # Log task completion
+            self.logger.log_task_complete(task_id, {"response_type": response["type"], "has_audio": response["audio_url"] is not None})
+            self.event_emitter.emit_task_event(
+                task_id,
+                EventType.TASK_COMPLETE,
+                "process_user_message",
+                {"response_type": response["type"], "audio_present": response["audio_url"] is not None}
+            )
+
+            # Clear correlation context
+            self.logger.clear_context("correlation_id")
+
+            return response
+
+        except Exception as e:
+            # Log task error
+            self.logger.log_task_error(task_id, e, {"user_message": user_message})
+            self.event_emitter.emit_task_event(
+                task_id,
+                EventType.TASK_ERROR,
+                "process_user_message",
+                {"error": str(e), "user_message": user_message}
+            )
+
+            # Trigger general system error recovery
+            self.recovery_engine.detect_failure(
+                "message_processing_failed",
+                {"error": str(e), "task_id": task_id, "user_message": user_message},
+                {"session_id": self.session_id}
+            )
+
+            # Return fallback response
             return {
                 "type": "ai_response",
                 "audio_url": None,
-                "video": f"/video/{os.path.basename(video_path)}",
-                "text": ollama_response,
+                "video": "/video/idle-loop.mp4",
+                "text": "I encountered an error processing your message. Please try again.",
                 "duration": 3.0
             }
 
@@ -184,6 +462,8 @@ async def chat_websocket(websocket: WebSocket):
             emotion_state="greeting",
             target_duration=6.0  # Standard greeting duration
         )
+
+        assert greeting_clip is not None, "greeting_clip must not be None"
 
         await websocket.send_json({
             "type": "ai_response",

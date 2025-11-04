@@ -285,9 +285,11 @@
                 await videoElement.load();  // Ensure video loads
             }
 
-            // Load and play audio
-            if (data.audio_url) {
+            // Load and play audio - handle null/empty values gracefully
+            if (data.audio_url && data.audio_url !== null && data.audio_url !== 'null' && data.audio_url !== '') {
                 playAudio(data.audio_url);
+            } else {
+                console.log('⚠️  No audio available - showing video only');
             }
 
             console.log(`🎬 RICo Response: Video=${data.video}, Audio=${data.audio_url}, Duration=${data.duration ? data.duration.toFixed(1) : 'N/A'}s`);
