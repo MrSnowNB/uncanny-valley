@@ -21,33 +21,36 @@ class MouthROITracker:
         """Initialize OpenCV cascade classifiers"""
         # Load Haar cascade classifiers
         # Try multiple possible paths for Haar cascades
-        cv2_path = os.path.dirname(cv2.__file__)  # type: ignore
-        possible_paths = [
-            cv2_path.replace('__init__.py', 'data/haarcascades/'),
-            '/usr/share/opencv4/haarcascades/',
-            '/usr/local/share/opencv4/haarcascades/',
-            os.path.join(cv2_path, 'data', 'haarcascades')
-        ]
+        try:
+            cv2_module_path = os.path.dirname(cv2.__file__)  # type: ignore
+            possible_paths = [
+                cv2_module_path.replace('__init__.py', 'data/haarcascades/'),
+                '/usr/share/opencv4/haarcascades/',
+                '/usr/local/share/opencv4/haarcascades/',
+                os.path.join(cv2_module_path, 'data', 'haarcascades')
+            ]
 
-        cascade_file = None
-        for path in possible_paths:
-            test_file = os.path.join(path, 'haarcascade_frontalface_default.xml')
-            if os.path.exists(test_file):
-                cascade_file = test_file
-                break
+            cascade_file = None
+            for path in possible_paths:
+                test_file = os.path.join(path, 'haarcascade_frontalface_default.xml')
+                if os.path.exists(test_file):
+                    cascade_file = test_file
+                    break
 
-        if cascade_file:
-            self.face_cascade = cv2.CascadeClassifier(cascade_file)  # type: ignore
-        else:
-            # Fallback: try to load from opencv-python package
-            try:
-                import cv2.data  # type: ignore
-                self.face_cascade = cv2.CascadeClassifier(  # type: ignore
-                    cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'  # type: ignore
-                )
-            except:
-                logger.warning("Could not load Haar cascade classifier")
-                self.face_cascade = None
+            if cascade_file:
+                self.face_cascade = cv2.CascadeClassifier(cascade_file)  # type: ignore
+            else:
+                # Fallback: try to load from opencv-python package
+                try:
+                    self.face_cascade = cv2.CascadeClassifier(  # type: ignore
+                        cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'  # type: ignore
+                    )
+                except:
+                    logger.warning("Could not load Haar cascade classifier")
+                    self.face_cascade = None
+        except Exception as e:
+            logger.warning(f"Error initializing face cascade: {e}")
+            self.face_cascade = None
 
         # Note: OpenCV doesn't have a built-in mouth cascade
         # We'll use face detection and estimate mouth position

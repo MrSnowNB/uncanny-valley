@@ -21,6 +21,7 @@ from pydantic import BaseModel
 
 from .tts_engine import AliceTTSEngine
 from .video_duration_matcher import VideoDurationMatcher
+from .rico_pipeline import RicoPipeline
 from .shrp_logger import get_logger, EventType
 from .shrp_checkpoint_manager import get_checkpoint_manager
 from .shrp_recovery_engine import get_recovery_engine
@@ -41,6 +42,7 @@ class ChatStateManager:
         # Core components
         self.tts_engine = AliceTTSEngine()
         self.video_matcher = VideoDurationMatcher()  # RICo Phase 1: Duration matching
+        self.rico_pipeline = RicoPipeline()  # RICo Phase 2: Mouth synchronization
 
         # SHRP v1.0 Integration
         self.logger = get_logger()
@@ -329,25 +331,66 @@ class ChatStateManager:
                 self._create_checkpoint(f"message_{self.system_state['total_messages_processed']}")
 
             if audio_success:
-                # RICo Phase 1: Measure audio duration
-                audio_duration = librosa.get_duration(filename=audio_path)
-
-                # RICo Phase 1: Create duration-matched video
-                video_path = self.video_matcher.create_duration_matched_clip(
-                    emotion_state=video_state,
-                    target_duration=audio_duration
-                )
-
+                # Ensure audio_path is not None (should be guaranteed by audio_success check)
                 assert audio_path is not None, "audio_path must not be None in audio_success block"
-                assert video_path is not None, "video_path must not be None in audio_success block"
 
-                response = {
-                    "type": "ai_response",
-                    "audio_url": f"/audio/{os.path.basename(audio_path)}",
-                    "video": f"/ricovideos/{os.path.basename(video_path)}",
-                    "text": ollama_response,
-                    "duration": audio_duration
-                }
+                # RICo Phase 2: Get source video path for emotion state
+                source_video_path = os.path.join("data/video_clips", self.video_states[video_state]["clip"])
+
+                # RICo Phase 2: Process video with mouth synchronization
+                output_filename = f"rico_{video_state}_{uuid.uuid4().hex[:8]}.mp4"
+                output_video_path = os.path.join("outputs/video", output_filename)
+
+                try:
+                    processed_video_path = self.rico_pipeline.process_video_with_audio(
+                        video_path=source_video_path,
+                        audio_path=audio_path,
+                        text=ollama_response,
+                        output_path=output_video_path
+                    )
+
+                    # Ensure processed_video_path is valid
+                    assert processed_video_path is not None, "processed_video_path must not be None"
+
+                    # Measure audio duration for response
+                    audio_duration = librosa.get_duration(filename=audio_path)
+
+                    response = {
+                        "type": "ai_response",
+                        "audio_url": f"/audio/{os.path.basename(audio_path)}",
+                        "video": f"/ricovideos/{os.path.basename(processed_video_path)}",
+                        "text": ollama_response,
+                        "duration": audio_duration
+                    }
+
+                except Exception as e:
+                    # Fallback to Phase 1 if RICo processing fails
+                    self.logger.log_event(
+                        EventType.SYSTEM_ERROR,
+                        {
+                            "operation": "rico_pipeline_failed",
+                            "error": str(e),
+                            "emotion_state": video_state,
+                            "fallback": "phase_1_duration_matching"
+                        },
+                        severity="warn",
+                        tags=["rico", "fallback"]
+                    )
+
+                    # RICo Phase 1: Fallback to duration matching
+                    audio_duration = librosa.get_duration(filename=audio_path)
+                    video_path = self.video_matcher.create_duration_matched_clip(
+                        emotion_state=video_state,
+                        target_duration=audio_duration
+                    )
+
+                    response = {
+                        "type": "ai_response",
+                        "audio_url": f"/audio/{os.path.basename(audio_path)}",
+                        "video": f"/ricovideos/{os.path.basename(video_path)}" if video_path else "/video/idle-loop.mp4",
+                        "text": ollama_response,
+                        "duration": audio_duration
+                    }
             else:
                 # SHRP R2.1 Fix: Fallback TTS generation when primary method fails
                 audio_filename = f"response_{uuid.uuid4().hex[:8]}.wav"
@@ -372,22 +415,56 @@ class ChatStateManager:
                     audio_success_fixed = False
 
                 if audio_success_fixed:
-                    # RICo Phase 1: Measure audio duration
-                    audio_duration = librosa.get_duration(filename=audio_path)
+                    # RICo Phase 2: Try advanced mouth sync first
+                    source_video_path = os.path.join("data/video_clips", self.video_states[video_state]["clip"])
+                    output_filename = f"rico_{video_state}_{uuid.uuid4().hex[:8]}.mp4"
+                    output_video_path = os.path.join("outputs/video", output_filename)
 
-                    # RICo Phase 1: Create duration-matched video
-                    video_path = self.video_matcher.create_duration_matched_clip(
-                        emotion_state=video_state,
-                        target_duration=audio_duration
-                    )
+                    try:
+                        processed_video_path = self.rico_pipeline.process_video_with_audio(
+                            video_path=source_video_path,
+                            audio_path=audio_path,
+                            text=ollama_response,
+                            output_path=output_video_path
+                        )
 
-                    response = {
-                        "type": "ai_response",
-                        "audio_url": f"/audio/{audio_filename}",
-                        "video": f"/ricovideos/{os.path.basename(video_path)}" if video_path else "/video/idle-loop.mp4",
-                        "text": ollama_response,
-                        "duration": audio_duration
-                    }
+                        assert processed_video_path is not None, "processed_video_path must not be None"
+                        audio_duration = librosa.get_duration(filename=audio_path)
+
+                        response = {
+                            "type": "ai_response",
+                            "audio_url": f"/audio/{audio_filename}",
+                            "video": f"/ricovideos/{os.path.basename(processed_video_path)}",
+                            "text": ollama_response,
+                            "duration": audio_duration
+                        }
+
+                    except Exception as e:
+                        # Fallback to Phase 1 duration matching
+                        self.logger.log_event(
+                            EventType.SYSTEM_WARNING,
+                            {
+                                "operation": "rico_pipeline_fallback_tts",
+                                "error": str(e),
+                                "emotion_state": video_state
+                            },
+                            severity="warn",
+                            tags=["rico", "fallback", "tts"]
+                        )
+
+                        audio_duration = librosa.get_duration(filename=audio_path)
+                        video_path = self.video_matcher.create_duration_matched_clip(
+                            emotion_state=video_state,
+                            target_duration=audio_duration
+                        )
+
+                        response = {
+                            "type": "ai_response",
+                            "audio_url": f"/audio/{audio_filename}",
+                            "video": f"/ricovideos/{os.path.basename(video_path)}" if video_path else "/video/idle-loop.mp4",
+                            "text": ollama_response,
+                            "duration": audio_duration
+                        }
                 else:
                     # Absolute fallback - no audio
                     video_path = self.video_matcher.create_duration_matched_clip(
@@ -495,19 +572,65 @@ async def chat_websocket(websocket: WebSocket):
     state_manager.active_clients.add(websocket)
 
     try:
-        # Send welcome message with greeting clip
-        greeting_clip = state_manager.video_matcher.create_duration_matched_clip(
-            emotion_state="greeting",
-            target_duration=6.0  # Standard greeting duration
-        )
+        # Send welcome message with greeting clip - try RICo Phase 2 first
+        greeting_text = "Hello! I'm Alice, your guide to Cyberland. Click anywhere to start chatting!"
 
-        assert greeting_clip is not None, "greeting_clip must not be None"
+        try:
+            # RICo Phase 2: Create greeting video with mouth sync (no audio, just text timing)
+            source_video_path = os.path.join("data/video_clips", state_manager.video_states["greeting"]["clip"])
+            output_filename = f"rico_greeting_{uuid.uuid4().hex[:8]}.mp4"
+            output_video_path = os.path.join("outputs/video", output_filename)
 
-        # Send initial greeting without video (waits for user interaction)
+            # For greeting, we'll use a dummy audio file or just process with text timing
+            # Since there's no audio, we'll create a silent audio file for timing
+            silent_audio_path = os.path.join("outputs/audio", f"silent_greeting_{uuid.uuid4().hex[:8]}.wav")
+            os.makedirs("outputs/audio", exist_ok=True)
+
+            # Create a very short silent audio file for timing (6 seconds)
+            import numpy as np
+            import wave
+            sample_rate = 22050
+            duration = 6.0
+            samples = np.zeros(int(sample_rate * duration), dtype=np.int16)
+            with wave.open(silent_audio_path, 'wb') as wav_file:
+                wav_file.setnchannels(1)
+                wav_file.setsampwidth(2)
+                wav_file.setframerate(sample_rate)
+                wav_file.writeframes(samples.tobytes())
+
+            greeting_clip = state_manager.rico_pipeline.process_video_with_audio(
+                video_path=source_video_path,
+                audio_path=silent_audio_path,
+                text=greeting_text,
+                output_path=output_video_path
+            )
+
+            assert greeting_clip is not None, "greeting_clip must not be None"
+
+        except Exception as e:
+            # Fallback to Phase 1 if RICo processing fails
+            state_manager.logger.log_event(
+                EventType.SYSTEM_WARNING,
+                {
+                    "operation": "rico_pipeline_greeting_fallback",
+                    "error": str(e)
+                },
+                severity="warn",
+                tags=["rico", "fallback", "greeting"]
+            )
+
+            greeting_clip = state_manager.video_matcher.create_duration_matched_clip(
+                emotion_state="greeting",
+                target_duration=6.0
+            )
+
+            assert greeting_clip is not None, "greeting_clip must not be None"
+
+        # Send initial greeting
         await websocket.send_json({
             "type": "ai_response",
             "video": f"/ricovideos/{os.path.basename(greeting_clip)}",
-            "text": "Hello! I'm Alice, your guide to Cyberland. Click anywhere to start chatting!",
+            "text": greeting_text,
             "audio_url": None,
             "duration": 6.0
         })
