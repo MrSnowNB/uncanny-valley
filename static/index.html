@@ -283,13 +283,18 @@
                 videoElement.loop = false;  // Backend created exact-duration clip
                 videoElement.muted = true;
                 await videoElement.load();  // Ensure video loads
+                console.log('📹 RICo video loaded:', data.video);
             }
 
             // Load and play audio - handle null/empty values gracefully
             if (data.audio_url && data.audio_url !== null && data.audio_url !== 'null' && data.audio_url !== '') {
                 playAudio(data.audio_url);
             } else {
-                console.log('⚠️  No audio available - showing video only');
+                console.log('⚠️  No audio available - attempting video only');
+                // If no audio but we have video, wait for user interaction then play video
+                if (data.video) {
+                    await playVideoOnInteraction();
+                }
             }
 
             console.log(`🎬 RICo Response: Video=${data.video}, Audio=${data.audio_url}, Duration=${data.duration ? data.duration.toFixed(1) : 'N/A'}s`);
@@ -310,7 +315,7 @@
             // Map states to video files
             const videoFiles = {
                 'idle': 'idle-loop.mp4',
-                'listening': 'reading-computer-screen.mp4',
+                'listening': 'reading-the-computer-screen.mp4',
                 'neutral_speaking': 'speaking-neutral.mp4',
                 'friendly_speaking': 'thats-wonderful-to-hear.mp4',
                 'empathetic': 'concerned-deep-breath.mp4',
@@ -322,10 +327,9 @@
             if (videoFile) {
                 videoElement.src = `${videoDir}/${videoFile}`;
                 videoElement.loop = data.loop || false;
-                videoElement.play().catch(e => console.log('Video play error:', e));
+                // Don't auto-play - wait for user interaction
+                console.log(`Changed to state: ${state}, file: ${videoFile} (waiting for user interaction)`);
             }
-
-            console.log(`Changed to state: ${state}, file: ${videoFile}`);
         }
 
         function sendMessage() {
@@ -343,6 +347,76 @@
             }
         }
 
+        async function playVideoOnInteraction() {
+            // Wait for user interaction then play video
+            console.log('📹 Waiting for user interaction to play video...');
+
+            const playVideoHandler = async function() {
+                try {
+                    // Play video and audio together after user interaction
+                    const videoPromise = videoElement.play();
+                    console.log('▶️ Video playing synchronously');
+
+                    await videoPromise;
+                    console.log('✅ Video playback started');
+
+                    // Return to idle loop when video ends
+                    videoElement.onended = () => {
+                        console.log('🛑 Video ended, returning to idle');
+                        updateVideoState({state: 'idle', loop: true});
+                    };
+
+                } catch (error) {
+                    console.log('❌ Video autoplay still blocked:', error.message);
+                }
+            };
+
+            // Attach to next user interaction (click anywhere)
+            document.addEventListener('click', playVideoHandler, { once: true });
+        }
+
+        async function playAudioVideo(audioUrl) {
+            // Play both audio and video after user interaction
+            console.log('🔊🎬 Attempting to play synchronized audio + video:', audioUrl);
+
+            const playSyncedMedia = async function() {
+                try {
+                    // Play both simultaneously after user interaction
+                    const [audioResult, videoResult] = await Promise.allSettled([
+                        audioPlayer.play(),
+                        videoElement.play()
+                    ]);
+
+                    if (audioResult.status === 'fulfilled') {
+                        console.log('✅ Audio playing successfully');
+                        removeManualPlayButton();
+
+                        // Return to idle when audio ends
+                        audioPlayer.onended = () => {
+                            console.log('🛑 Audio ended, returning to idle');
+                            updateVideoState({state: 'idle', loop: true});
+                        };
+                    } else {
+                        console.log('❌ Audio play failed:', audioResult.reason.message);
+                        addPlayButton(audioUrl);
+                    }
+
+                    if (videoResult.status === 'fulfilled') {
+                        console.log('✅ Video playing successfully');
+                    } else {
+                        console.log('❌ Video play failed:', videoResult.reason.message);
+                    }
+
+                } catch (e) {
+                    console.log('❌ Media play blocked:', e.message);
+                    addPlayButton(audioUrl);
+                }
+            };
+
+            // Wait for user interaction, then play synchronously
+            document.addEventListener('click', playSyncedMedia, { once: true });
+        }
+
         function playAudio(audioUrl) {
             if (audioUrl) {
                 console.log('🔊 Attempting to play audio:', audioUrl);
@@ -356,29 +430,8 @@
                 audioPlayer.onended = () => console.log('🛑 Audio ended');
                 audioPlayer.onerror = (e) => console.error('❌ Audio load error:', e);
 
-                // Always try to play audio
-                audioPlayer.play().then(() => {
-                    console.log('✅ Audio began playing successfully');
-                    removeManualPlayButton();
-                }).catch(e => {
-                    console.log('❌ Audio play blocked:', e.message);
-                    addPlayButton(audioUrl);
-                });
-
-                // Add user interaction as backup if initial play fails
-                let userInteracted = false;
-                const userInteractionHandler = function() {
-                    if (userInteracted) return;
-                    userInteracted = true;
-                    audioPlayer.play().then(() => {
-                        console.log('✅ Audio began playing after user interaction');
-                        removeManualPlayButton();
-                    }).catch(e => {
-                        console.log('❌ Audio still blocked after user interaction:', e.message);
-                        addPlayButton(audioUrl);
-                    });
-                };
-                document.addEventListener('click', userInteractionHandler, { once: true });
+                // Use new synchronized play function
+                playAudioVideo(audioUrl);
             }
         }
 

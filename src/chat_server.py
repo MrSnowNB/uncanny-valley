@@ -465,10 +465,11 @@ async def chat_websocket(websocket: WebSocket):
 
         assert greeting_clip is not None, "greeting_clip must not be None"
 
+        # Send initial greeting without video (waits for user interaction)
         await websocket.send_json({
             "type": "ai_response",
             "video": f"/ricovideos/{os.path.basename(greeting_clip)}",
-            "text": "Hello! I'm Alice, your guide to Cyberland. How can I help you today?",
+            "text": "Hello! I'm Alice, your guide to Cyberland. Click anywhere to start chatting!",
             "audio_url": None,
             "duration": 6.0
         })
