@@ -1,0 +1,921 @@
+# PHASE 2: REAL-TIME MOUTH ROI SYNCHRONIZATION
+# RICo (Region of Interest Codec) - Adversarial Lip-Sync Implementation
+# AI-First Execution Plan for Coding Agent
+# Version: 2.0.0 - Garage AGI Production
+# Date: 2025-11-05
+
+# ============================================================================
+# PHASE 2 OVERVIEW
+# ============================================================================
+
+phase_2_objective: |
+  Implement real-time mouth ROI (Region of Interest) tracking and replacement
+  with phoneme-driven viseme generation to prove RICo works under adversarial
+  conditions (head movement, occlusion, variable lighting).
+  
+  This phase demonstrates the CORE patent innovation: coarticulation-aware
+  mouth synchronization that is robust to real-world challenges.
+
+phase_2_scope:
+  builds_on:
+    - "Phase 1: Emotion-driven duration-matched video synchronization (COMPLETE)"
+    - "SHRP: Self-healing recovery protocol (PROVEN)"
+  
+  includes:
+    - Mouth ROI tracking with MediaPipe Face Mesh
+    - Phoneme extraction with forced alignment
+    - Viseme generation with coarticulation smoothing
+    - ROI compositing with Poisson blending
+    - Sync drift measurement and correction
+    - Adversarial robustness testing (head movement, occlusion)
+  
+  excludes:
+    - Full face animation (eyes/brows - Phase 3)
+    - Voice cloning/upgrade (separate track)
+    - Mobile optimization (Phase 2B)
+  
+  success_criteria:
+    - Mouth tracked through ±30° head rotation
+    - Visemes synchronized with <40ms drift
+    - Works on all 7 clips despite movement/occlusion
+    - Seamless ROI blending (no visible artifacts)
+    - Processing speed >15 FPS on Z8 workstation
+    - Measurable improvement in lip-sync realism (AB test)
+
+  strategic_value:
+    - "Proves RICo handles HARDEST cases (competitors fail on these clips)"
+    - "Patent claims: robustness, bounded drift, coarticulation awareness"
+    - "Investor demo: 'garage AGI' aesthetic shows real-world applicability"
+    - "Technical differentiation from Wav2Lip, MuseTalk, D-ID"
+
+# ============================================================================
+# ADVERSARIAL CLIP ANALYSIS
+# ============================================================================
+
+test_corpus:
+  clip_1:
+    file: "reading-the-computer-screen.mp4"
+    characteristics:
+      - "Head tilts down (chin toward chest)"
+      - "Mouth partially obscured by head angle"
+      - "Variable lighting on face"
+    difficulty: "MEDIUM"
+    patent_value: "Demonstrates occlusion handling"
+  
+  clip_2:
+    file: "it-is-great-to-see-you-again.mp4"
+    characteristics:
+      - "Expressive head movement (nodding)"
+      - "Mouth opens/closes naturally (smiling)"
+      - "Dynamic facial expression changes"
+    difficulty: "HIGH"
+    patent_value: "Shows coarticulation with natural expressions"
+  
+  clip_3:
+    file: "speaking-nuetral.mp4"
+    characteristics:
+      - "Minimal movement (easiest baseline)"
+      - "Frontal face, stable lighting"
+      - "Clear mouth visibility"
+    difficulty: "LOW"
+    patent_value: "Baseline for accuracy comparison"
+  
+  clip_4:
+    file: "thats-wonderful-to-hear.mp4"
+    characteristics:
+      - "Large smile (mouth shape changes)"
+      - "Head tilts slightly left/right"
+      - "Expressive eye movement (gaze shifts)"
+    difficulty: "MEDIUM-HIGH"
+    patent_value: "Emotional expression + mouth sync"
+  
+  clip_5:
+    file: "concerned-deep-breath.mp4"
+    characteristics:
+      - "Deep breath (mouth/chest movement)"
+      - "Head slightly lowered (looking down)"
+      - "Subtle facial tension"
+    difficulty: "MEDIUM"
+    patent_value: "Natural breathing integration"
+  
+  clip_6:
+    file: "see-you-later.mp4"
+    characteristics:
+      - "Waving gesture (body movement)"
+      - "Head rotation (profile view partial)"
+      - "Mouth visible but angled"
+    difficulty: "HIGH"
+    patent_value: "±20° rotation robustness"
+  
+  clip_7:
+    file: "idle-loop.mp4"
+    characteristics:
+      - "Continuous subtle movement"
+      - "Blinking, micro-expressions"
+      - "Natural resting face"
+    difficulty: "LOW-MEDIUM"
+    patent_value: "Idle state handling (no speech)"
+
+# ============================================================================
+# PROJECT STRUCTURE
+# ============================================================================
+
+project_structure: |
+  uncanny-valley/
+  ├── data/
+  │   ├── video_clips/                         # EXISTING: 7 clips
+  │   ├── emotion_config.yaml                  # EXISTING: Phase 1
+  │   ├── phoneme_viseme_map.yaml              # NEW: IPA to viseme mapping
+  │   └── coarticulation_rules.yaml            # NEW: Context blending rules
+  ├── src/
+  │   ├── chat_server.py                       # EXISTING: Phase 1
+  │   ├── video_duration_matcher.py            # EXISTING: Phase 1
+  │   ├── mouth_tracker.py                     # NEW: MediaPipe integration
+  │   ├── phoneme_aligner.py                   # NEW: Forced alignment
+  │   ├── viseme_mapper.py                     # NEW: Phoneme → viseme
+  │   ├── roi_compositor.py                    # NEW: Blending engine
+  │   └── rico_pipeline.py                     # NEW: End-to-end orchestrator
+  ├── outputs/
+  │   ├── audio/                               # EXISTING: TTS audio
+  │   ├── video/                               # UPDATE: Mouth-synced videos
+  │   ├── logs/                                # UPDATE: Phase 2 metrics
+  │   └── debug/                               # NEW: ROI masks, intermediates
+  ├── tests/
+  │   ├── test_mouth_tracker.py                # NEW: Unit tests
+  │   ├── test_viseme_mapper.py                # NEW: Unit tests
+  │   └── phase2_integration_test.py           # NEW: E2E validation
+  ├── models/                                  # NEW: Pre-trained models
+  │   ├── face_mesh_mediapipe/                 # MediaPipe models
+  │   └── forced_aligner/                      # MFA/Gentle models
+  └── requirements.txt                         # UPDATE: New dependencies
+
+# ============================================================================
+# TASK BREAKDOWN WITH GATES
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# TASK 1: ENVIRONMENT SETUP & DEPENDENCIES
+# ----------------------------------------------------------------------------
+
+task_1:
+  id: "T1"
+  name: "Install MediaPipe, OpenCV, and Alignment Tools"
+  priority: "critical"
+  estimated_time: "1 hour"
+  dependencies: ["Phase 1 complete"]
+  
+  steps:
+    - step_id: "T1.1"
+      action: "Install computer vision dependencies"
+      commands:
+        - "pip install mediapipe==0.10.8"
+        - "pip install opencv-python==4.8.1.78"
+        - "pip install opencv-contrib-python==4.8.1.78"
+        - "pip install numpy==1.24.3"
+        - "pip install scipy==1.11.4"
+      validation:
+        - "python -c 'import mediapipe; import cv2; print(mediapipe.__version__)'"
+      on_failure:
+        action: "retry"
+        max_retries: 2
+    
+    - step_id: "T1.2"
+      action: "Install phoneme alignment tools"
+      commands:
+        - "pip install montreal-forced-aligner==3.0.1"  # OR gentle-aligner
+        - "pip install praatio==6.0.0"                 # TextGrid parsing
+        - "pip install phonemizer==3.2.1"              # Fallback phoneme gen
+      validation:
+        - "mfa version"  # Check MFA installed
+      on_failure:
+        action: "install_gentle_instead"
+        fallback: "Use phonemizer library for basic alignment"
+    
+    - step_id: "T1.3"
+      action: "Download MediaPipe face mesh model"
+      commands:
+        - "mkdir -p models/face_mesh_mediapipe"
+        - "python -c 'import mediapipe as mp; mp.solutions.face_mesh.FaceMesh()'"
+      validation:
+        - "test -d ~/.local/share/mediapipe/models"  # Auto-downloaded
+      on_failure:
+        action: "manual_download"
+        url: "https://storage.googleapis.com/mediapipe-models/"
+    
+    - step_id: "T1.4"
+      action: "Verify GPU acceleration available"
+      commands:
+        - "python -c 'import cv2; print(cv2.cuda.getCudaEnabledDeviceCount())'"
+      validation:
+        - "GPU count > 0 (for Z8 workstation)"
+      on_failure:
+        action: "warn_cpu_only"
+        message: "CUDA not available - will use CPU (slower but functional)"
+  
+  gate: "GATE_1"
+  gate_validation:
+    - assertion: "MediaPipe installed and functional"
+      test: "python -c 'import mediapipe; mp.solutions.face_mesh.FaceMesh()'"
+      criticality: "critical"
+    
+    - assertion: "OpenCV with contrib modules"
+      test: "python -c 'import cv2; cv2.seamlessClone'"
+      criticality: "critical"
+    
+    - assertion: "Phoneme alignment tool available"
+      test: "mfa version || python -c 'import phonemizer'"
+      criticality: "high"
+  
+  on_gate_pass:
+    - "Log to outputs/logs/gate_1_passed.txt"
+    - "Proceed to Task 2"
+
+# ----------------------------------------------------------------------------
+# TASK 2: MOUTH ROI TRACKING MODULE
+# ----------------------------------------------------------------------------
+
+task_2:
+  id: "T2"
+  name: "Implement Robust Mouth Tracking with MediaPipe"
+  priority: "critical"
+  estimated_time: "6 hours"
+  dependencies: ["T1"]
+  
+  steps:
+    - step_id: "T2.1"
+      action: "Create MouthROITracker class"
+      file_to_create: "src/mouth_tracker.py"
+      content: |
+        """
+        Mouth ROI Tracker for RICo Phase 2
+        
+        Tracks mouth region through head movement, rotation, and partial occlusion
+        using MediaPipe Face Mesh (468 landmarks).
+        """
+        
+        import mediapipe as mp
+        import cv2
+        import numpy as np
+        from typing import Optional, Tuple, Dict
+        import logging
+        
+        logging.basicConfig(level=logging.INFO)
+        logger = logging.getLogger(__name__)
+        
+        class MouthROITracker:
+            """Tracks mouth region with occlusion detection"""
+            
+            # MediaPipe face mesh landmark indices for mouth region
+            UPPER_LIP_OUTER = [61, 185, 40, 39, 37, 0, 267, 269, 270, 409, 291]
+            LOWER_LIP_OUTER = [146, 91, 181, 84, 17, 314, 405, 321, 375, 291]
+            UPPER_LIP_INNER = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308]
+            LOWER_LIP_INNER = [95, 88, 178, 87, 14, 317, 402, 318, 324, 308]
+            
+            def __init__(self, 
+                         min_detection_confidence: float = 0.5,
+                         min_tracking_confidence: float = 0.5):
+                """Initialize MediaPipe Face Mesh"""
+                self.face_mesh = mp.solutions.face_mesh.FaceMesh(
+                    static_image_mode=False,
+                    max_num_faces=1,
+                    refine_landmarks=True,
+                    min_detection_confidence=min_detection_confidence,
+                    min_tracking_confidence=min_tracking_confidence
+                )
+                
+                # Combine all mouth landmarks
+                self.ALL_MOUTH_LANDMARKS = list(set(
+                    self.UPPER_LIP_OUTER + self.LOWER_LIP_OUTER +
+                    self.UPPER_LIP_INNER + self.LOWER_LIP_INNER
+                ))
+                
+                logger.info(f"📹 MouthROITracker initialized with {len(self.ALL_MOUTH_LANDMARKS)} landmarks")
+            
+            def extract_mouth_roi(self, frame: np.ndarray) -> Tuple[Optional[Dict], float]:
+                """
+                Extract mouth region from frame
+                
+                Args:
+                    frame: BGR image (OpenCV format)
+                
+                Returns:
+                    (roi_data, confidence) where roi_data contains:
+                        - 'roi': Cropped mouth region
+                        - 'polygon': Mouth outline polygon
+                        - 'bbox': Bounding box (x, y, w, h)
+                        - 'landmarks': Full landmark dict
+                    confidence: 0.0-1.0 (average visibility)
+                """
+                # Convert to RGB for MediaPipe
+                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                results = self.face_mesh.process(rgb)
+                
+                if not results.multi_face_landmarks:
+                    logger.debug("No face detected in frame")
+                    return None, 0.0
+                
+                # Get first face (we only track one)
+                landmarks = results.multi_face_landmarks[0]
+                h, w = frame.shape[:2]
+                
+                # Extract mouth landmark points and confidences
+                mouth_points = []
+                visibilities = []
+                
+                for idx in self.ALL_MOUTH_LANDMARKS:
+                    lm = landmarks.landmark[idx]
+                    x_px = int(lm.x * w)
+                    y_px = int(lm.y * h)
+                    mouth_points.append((x_px, y_px))
+                    visibilities.append(lm.visibility if hasattr(lm, 'visibility') else 1.0)
+                
+                # Calculate average confidence (occlusion detection)
+                avg_confidence = np.mean(visibilities)
+                
+                # If mouth heavily occluded, return None
+                if avg_confidence < 0.3:
+                    logger.warning(f"Mouth occluded (confidence: {avg_confidence:.2f})")
+                    return None, avg_confidence
+                
+                # Create polygon for mouth outline
+                mouth_polygon = np.array(mouth_points, dtype=np.int32)
+                
+                # Get bounding box around mouth
+                x, y, w_bbox, h_bbox = cv2.boundingRect(mouth_polygon)
+                
+                # Add padding (15% on each side)
+                padding = 0.15
+                x_pad = int(w_bbox * padding)
+                y_pad = int(h_bbox * padding)
+                
+                x = max(0, x - x_pad)
+                y = max(0, y - y_pad)
+                w_bbox = min(w - x, w_bbox + 2*x_pad)
+                h_bbox = min(h - y, h_bbox + 2*y_pad)
+                
+                # Extract ROI
+                roi = frame[y:y+h_bbox, x:x+w_bbox].copy()
+                
+                # Package results
+                roi_data = {
+                    'roi': roi,
+                    'polygon': mouth_polygon,
+                    'bbox': (x, y, w_bbox, h_bbox),
+                    'landmarks': {
+                        'upper_lip_outer': [mouth_points[i] for i, idx in enumerate(self.ALL_MOUTH_LANDMARKS) if idx in self.UPPER_LIP_OUTER],
+                        'lower_lip_outer': [mouth_points[i] for i, idx in enumerate(self.ALL_MOUTH_LANDMARKS) if idx in self.LOWER_LIP_OUTER],
+                    },
+                    'frame_size': (w, h)
+                }
+                
+                logger.debug(f"✅ Mouth ROI extracted: {w_bbox}x{h_bbox}px, confidence: {avg_confidence:.2f}")
+                
+                return roi_data, avg_confidence
+            
+            def visualize_mouth_roi(self, frame: np.ndarray, roi_data: Optional[Dict]) -> np.ndarray:
+                """Draw mouth ROI and landmarks on frame (for debugging)"""
+                if roi_data is None:
+                    return frame
+                
+                debug_frame = frame.copy()
+                
+                # Draw bounding box
+                x, y, w, h = roi_data['bbox']
+                cv2.rectangle(debug_frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                
+                # Draw polygon
+                cv2.polylines(debug_frame, [roi_data['polygon']], True, (255, 0, 0), 2)
+                
+                # Draw landmarks
+                for point in roi_data['polygon']:
+                    cv2.circle(debug_frame, point, 2, (0, 0, 255), -1)
+                
+                return debug_frame
+            
+            def release(self):
+                """Cleanup resources"""
+                self.face_mesh.close()
+      
+      validation:
+        - "python -c 'from src.mouth_tracker import MouthROITracker; print(\"✅ Import successful\")'"
+      on_failure:
+        action: "check_syntax"
+        error_id: "ERR_MOUTH_TRACKER_SYNTAX"
+    
+    - step_id: "T2.2"
+      action: "Test mouth tracker on easiest clip"
+      test_file: "tests/test_mouth_tracker.py"
+      content: |
+        """Test MouthROITracker on speaking-nuetral.mp4 (easiest clip)"""
+        import cv2
+        from src.mouth_tracker import MouthROITracker
+        import os
+        
+        def test_mouth_tracking():
+            tracker = MouthROITracker()
+            
+            # Load test video
+            video_path = "data/video_clips/speaking-nuetral.mp4"
+            cap = cv2.VideoCapture(video_path)
+            
+            assert cap.isOpened(), f"Failed to open {video_path}"
+            
+            frames_processed = 0
+            frames_with_mouth = 0
+            confidences = []
+            
+            # Process first 50 frames
+            for i in range(50):
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                
+                roi_data, confidence = tracker.extract_mouth_roi(frame)
+                frames_processed += 1
+                
+                if roi_data is not None:
+                    frames_with_mouth += 1
+                    confidences.append(confidence)
+                    
+                    # Verify ROI is not empty
+                    assert roi_data['roi'].size > 0, "Empty ROI extracted"
+                    assert len(roi_data['polygon']) > 10, "Too few landmarks"
+            
+            cap.release()
+            tracker.release()
+            
+            # Success criteria
+            detection_rate = frames_with_mouth / frames_processed
+            avg_confidence = sum(confidences) / len(confidences) if confidences else 0
+            
+            print(f"✅ Processed {frames_processed} frames")
+            print(f"✅ Detection rate: {detection_rate*100:.1f}%")
+            print(f"✅ Avg confidence: {avg_confidence:.2f}")
+            
+            assert detection_rate > 0.8, f"Low detection rate: {detection_rate}"
+            assert avg_confidence > 0.5, f"Low confidence: {avg_confidence}"
+            
+            print("✅ Mouth tracking test PASSED")
+        
+        if __name__ == "__main__":
+            test_mouth_tracking()
+      
+      execute_test:
+        - "python tests/test_mouth_tracker.py"
+      
+      expected_output: |
+        ✅ Processed 50 frames
+        ✅ Detection rate: >80%
+        ✅ Avg confidence: >0.5
+        ✅ Mouth tracking test PASSED
+      
+      on_failure:
+        action: "debug_video_path"
+        check:
+          - "Verify data/video_clips/speaking-nuetral.mp4 exists"
+          - "Check video file is not corrupted"
+          - "Reduce min_detection_confidence to 0.3 if needed"
+  
+  gate: "GATE_2"
+  gate_validation:
+    - assertion: "MouthROITracker class created"
+      test: "test -f src/mouth_tracker.py"
+      criticality: "critical"
+    
+    - assertion: "Mouth tracking test passes"
+      test: "python tests/test_mouth_tracker.py"
+      evidence: "Detection rate >80%, confidence >0.5"
+      criticality: "critical"
+    
+    - assertion: "Works on adversarial clip (head movement)"
+      test: "Manual - test on it-is-great-to-see-you-again.mp4"
+      evidence: "Detection rate >60% despite movement"
+      criticality: "high"
+  
+  on_gate_pass:
+    - "Save test output to outputs/logs/gate_2_passed.txt"
+    - "Proceed to Task 3"
+
+# ----------------------------------------------------------------------------
+# TASK 3: PHONEME ALIGNMENT MODULE
+# ----------------------------------------------------------------------------
+
+task_3:
+  id: "T3"
+  name: "Extract Phoneme Timings from TTS Audio"
+  priority: "critical"
+  estimated_time: "4 hours"
+  dependencies: ["T2"]
+  
+  implementation_note: |
+    We need timestamped phonemes to drive viseme generation.
+    Options:
+    1. Montreal Forced Aligner (MFA) - most accurate, requires setup
+    2. Gentle - easier, less accurate
+    3. Phonemizer + heuristics - fallback, approximate timing
+  
+  steps:
+    - step_id: "T3.1"
+      action: "Create PhonemeAligner class with fallback options"
+      file_to_create: "src/phoneme_aligner.py"
+      content: |
+        """
+        Phoneme Alignment for RICo Phase 2
+        
+        Extracts timestamped phonemes from TTS audio using:
+        1. Montreal Forced Aligner (preferred)
+        2. Gentle aligner (fallback)
+        3. Phonemizer + heuristic timing (basic fallback)
+        """
+        
+        import os
+        import subprocess
+        import json
+        from pathlib import Path
+        from typing import List, Dict, Optional
+        import logging
+        
+        logging.basicConfig(level=logging.INFO)
+        logger = logging.getLogger(__name__)
+        
+        class PhonemeAligner:
+            """Extracts phoneme timings from audio"""
+            
+            def __init__(self, method: str = "auto"):
+                """
+                Args:
+                    method: "mfa", "gentle", "heuristic", or "auto" (tries in order)
+                """
+                self.method = method
+                self.available_methods = self._check_available_methods()
+                
+                if method == "auto":
+                    if "mfa" in self.available_methods:
+                        self.method = "mfa"
+                    elif "gentle" in self.available_methods:
+                        self.method = "gentle"
+                    else:
+                        self.method = "heuristic"
+                        logger.warning("⚠️  No forced aligner available - using heuristic timing")
+                
+                logger.info(f"📊 PhonemeAligner using method: {self.method}")
+            
+            def _check_available_methods(self) -> List[str]:
+                """Check which alignment methods are available"""
+                methods = []
+                
+                # Check MFA
+                try:
+                    subprocess.run(["mfa", "version"], capture_output=True, check=True)
+                    methods.append("mfa")
+                except (FileNotFoundError, subprocess.CalledProcessError):
+                    pass
+                
+                # Check Gentle
+                try:
+                    import gentle
+                    methods.append("gentle")
+                except ImportError:
+                    pass
+                
+                # Heuristic always available
+                methods.append("heuristic")
+                
+                return methods
+            
+            def align_phonemes(self, 
+                             text: str, 
+                             audio_path: str) -> List[Dict]:
+                """
+                Extract timestamped phonemes from audio
+                
+                Args:
+                    text: Transcript text
+                    audio_path: Path to audio file (.wav)
+                
+                Returns:
+                    List of dicts: [
+                        {
+                            'time': 0.12,       # Start time in seconds
+                            'phoneme': 'HH',    # IPA phoneme
+                            'duration': 0.08,   # Duration in seconds
+                            'word': 'hello'     # Source word (if available)
+                        },
+                        ...
+                    ]
+                """
+                if self.method == "mfa":
+                    return self._align_with_mfa(text, audio_path)
+                elif self.method == "gentle":
+                    return self._align_with_gentle(text, audio_path)
+                else:
+                    return self._align_heuristic(text, audio_path)
+            
+            def _align_with_mfa(self, text: str, audio_path: str) -> List[Dict]:
+                """Use Montreal Forced Aligner"""
+                # TODO: Implement MFA alignment
+                # This requires MFA setup and model download
+                # For now, fall back to heuristic
+                logger.warning("MFA not fully implemented - using heuristic")
+                return self._align_heuristic(text, audio_path)
+            
+            def _align_with_gentle(self, text: str, audio_path: str) -> List[Dict]:
+                """Use Gentle aligner"""
+                # TODO: Implement Gentle alignment
+                logger.warning("Gentle not fully implemented - using heuristic")
+                return self._align_heuristic(text, audio_path)
+            
+            def _align_heuristic(self, text: str, audio_path: str) -> List[Dict]:
+                """
+                Heuristic phoneme timing (approximate)
+                
+                Strategy:
+                1. Convert text to phonemes using phonemizer
+                2. Get audio duration with librosa
+                3. Distribute phonemes evenly across duration
+                """
+                try:
+                    from phonemizer import phonemize
+                    import librosa
+                except ImportError:
+                    logger.error("phonemizer and librosa required for heuristic alignment")
+                    raise
+                
+                # Get phonemes
+                phonemes_str = phonemize(
+                    text,
+                    language='en-us',
+                    backend='espeak',
+                    strip=True,
+                    preserve_punctuation=False
+                )
+                
+                # Parse phonemes (espeak format)
+                phonemes = phonemes_str.replace(' ', '').replace('ː', '')
+                phoneme_list = list(phonemes)
+                
+                # Get audio duration
+                audio_duration = librosa.get_duration(filename=audio_path)
+                
+                # Distribute phonemes evenly
+                # (This is crude but works as fallback)
+                avg_phoneme_duration = audio_duration / len(phoneme_list)
+                
+                result = []
+                current_time = 0.0
+                
+                for phoneme in phoneme_list:
+                    result.append({
+                        'time': current_time,
+                        'phoneme': phoneme,
+                        'duration': avg_phoneme_duration,
+                        'word': None  # Not available in heuristic mode
+                    })
+                    current_time += avg_phoneme_duration
+                
+                logger.info(f"📊 Heuristic alignment: {len(result)} phonemes over {audio_duration:.2f}s")
+                
+                return result
+      
+      validation:
+        - "python -c 'from src.phoneme_aligner import PhonemeAligner; print(\"✅ Import successful\")'"
+    
+    - step_id: "T3.2"
+      action: "Test phoneme alignment on sample audio"
+      test_file: "tests/test_phoneme_aligner.py"
+      content: |
+        """Test PhonemeAligner with existing TTS audio"""
+        from src.phoneme_aligner import PhonemeAligner
+        import os
+        
+        def test_phoneme_alignment():
+            aligner = PhonemeAligner(method="heuristic")
+            
+            # Use existing audio from Phase 1
+            audio_files = list(Path("outputs/audio").glob("*.wav"))
+            
+            if not audio_files:
+                print("⚠️  No audio files found - generate one first")
+                # Generate test audio
+                import pyttsx3
+                engine = pyttsx3.init()
+                test_text = "Hello, this is a test."
+                test_audio = "outputs/audio/test_phoneme.wav"
+                engine.save_to_file(test_text, test_audio)
+                engine.runAndWait()
+                audio_path = test_audio
+                text = test_text
+            else:
+                audio_path = str(audio_files[0])
+                text = "This is test text for alignment"  # Approximate
+            
+            # Align
+            phonemes = aligner.align_phonemes(text, audio_path)
+            
+            # Validate
+            assert len(phonemes) > 0, "No phonemes extracted"
+            assert phonemes[0]['time'] == 0.0, "First phoneme should start at 0"
+            assert all('phoneme' in p for p in phonemes), "Missing phoneme field"
+            assert all('duration' in p for p in phonemes), "Missing duration field"
+            
+            print(f"✅ Extracted {len(phonemes)} phonemes")
+            print(f"✅ Total duration: {sum(p['duration'] for p in phonemes):.2f}s")
+            print(f"✅ First 5 phonemes: {[p['phoneme'] for p in phonemes[:5]]}")
+            print("✅ Phoneme alignment test PASSED")
+        
+        if __name__ == "__main__":
+            from pathlib import Path
+            test_phoneme_alignment()
+      
+      execute_test:
+        - "python tests/test_phoneme_aligner.py"
+      
+      expected_output: |
+        ✅ Extracted N phonemes
+        ✅ Total duration matches audio
+        ✅ Phoneme alignment test PASSED
+  
+  gate: "GATE_3"
+  gate_validation:
+    - assertion: "PhonemeAligner class created"
+      test: "test -f src/phoneme_aligner.py"
+      criticality: "critical"
+    
+    - assertion: "Phoneme extraction test passes"
+      test: "python tests/test_phoneme_aligner.py"
+      criticality: "critical"
+    
+    - assertion: "Phonemes have valid timing"
+      test: "Manual - verify total duration matches audio file"
+      criticality: "high"
+  
+  on_gate_pass:
+    - "Save test output to outputs/logs/gate_3_passed.txt"
+    - "Proceed to Task 4"
+
+# ============================================================================
+# REMAINING TASKS (T4-T7) SUMMARY
+# ============================================================================
+
+task_4:
+  id: "T4"
+  name: "Viseme Mapping with Coarticulation"
+  estimated_time: "5 hours"
+  creates:
+    - "src/viseme_mapper.py"
+    - "data/phoneme_viseme_map.yaml"
+    - "data/coarticulation_rules.yaml"
+  tests:
+    - "tests/test_viseme_mapper.py"
+
+task_5:
+  id: "T5"
+  name: "ROI Compositor with Poisson Blending"
+  estimated_time: "6 hours"
+  creates:
+    - "src/roi_compositor.py"
+  tests:
+    - "tests/test_roi_compositor.py"
+
+task_6:
+  id: "T6"
+  name: "End-to-End RICo Pipeline Integration"
+  estimated_time: "8 hours"
+  creates:
+    - "src/rico_pipeline.py"
+    - "Integration with chat_server.py"
+  tests:
+    - "tests/phase2_integration_test.py"
+
+task_7:
+  id: "T7"
+  name: "Adversarial Testing & Metrics Collection"
+  estimated_time: "4 hours"
+  tests_all_clips:
+    - "speaking-nuetral.mp4 (baseline)"
+    - "it-is-great-to-see-you-again.mp4 (movement)"
+    - "reading-the-computer-screen.mp4 (occlusion)"
+    - "see-you-later.mp4 (rotation)"
+    - "All 7 clips with metrics"
+  metrics:
+    - "Sync drift <40ms"
+    - "Detection rate >60% on hardest clips"
+    - "Processing speed >15 FPS"
+    - "Blending quality (subjective AB test)"
+
+# ============================================================================
+# SUCCESS CRITERIA & DELIVERABLES
+# ============================================================================
+
+success_criteria:
+  technical:
+    - "✅ Mouth tracked through ±30° head rotation"
+    - "✅ Phonemes extracted with timing accuracy"
+    - "✅ Visemes generated with coarticulation smoothing"
+    - "✅ ROI blending seamless (Poisson)"
+    - "✅ Sync drift <40ms average across all clips"
+    - "✅ Processing >15 FPS on Z8"
+    - "✅ Works on all 7 clips (100% corpus)"
+  
+  patent:
+    - "✅ Robustness demonstrated (hardest clips pass)"
+    - "✅ Bounded drift metrics collected"
+    - "✅ Coarticulation improvement measurable"
+    - "✅ Performance data for claims"
+  
+  demo:
+    - "✅ Side-by-side video (before/after mouth sync)"
+    - "✅ Metrics overlay showing sync accuracy"
+    - "✅ Works with 'garage AGI' aesthetic"
+
+deliverables:
+  code:
+    - "src/mouth_tracker.py"
+    - "src/phoneme_aligner.py"
+    - "src/viseme_mapper.py"
+    - "src/roi_compositor.py"
+    - "src/rico_pipeline.py"
+  
+  data:
+    - "data/phoneme_viseme_map.yaml"
+    - "data/coarticulation_rules.yaml"
+  
+  documentation:
+    - "outputs/logs/gate_*.txt (all 7 gates)"
+    - "outputs/logs/phase2_metrics.json"
+    - "PHASE_2_COMPLETION_REPORT.md"
+  
+  demo_assets:
+    - "outputs/video/*_mouth_synced.mp4 (7 clips)"
+    - "outputs/debug/*_roi_masks.mp4 (visualization)"
+    - "demo_video_phase2.mp4 (investor pitch)"
+
+# ============================================================================
+# ESTIMATED TIMELINE
+# ============================================================================
+
+timeline:
+  week_1:
+    - "T1: Environment setup (1 hour)"
+    - "T2: Mouth tracking (6 hours)"
+    - "T3: Phoneme alignment (4 hours)"
+    - "T4: Viseme mapping (5 hours)"
+  
+  week_2:
+    - "T5: ROI compositor (6 hours)"
+    - "T6: Pipeline integration (8 hours)"
+    - "T7: Testing & metrics (4 hours)"
+    - "Documentation (2 hours)"
+  
+  total_effort: "36 hours (1.5-2 weeks at full time, 3-4 weeks part time)"
+
+# ============================================================================
+# RISK MITIGATION
+# ============================================================================
+
+risks:
+  technical:
+    - risk: "MediaPipe fails on heavily rotated heads (>30°)"
+      mitigation: "Add head pose estimation, skip frames beyond threshold"
+    
+    - risk: "Phoneme alignment inaccurate (heuristic method)"
+      mitigation: "Invest 2 hours in MFA setup for production accuracy"
+    
+    - risk: "ROI blending visible (seams, artifacts)"
+      mitigation: "Tune Poisson parameters, add feathering, use color correction"
+    
+    - risk: "Processing too slow (<15 FPS)"
+      mitigation: "GPU acceleration, frame skipping, resolution reduction"
+  
+  project:
+    - risk: "Scope creep (trying to do full face)"
+      mitigation: "STRICT focus on mouth only - eyes are Phase 3"
+    
+    - risk: "Agent hallucinating success again"
+      mitigation: "MANDATORY runtime validation at each gate"
+
+# ============================================================================
+# GARAGE AGI SELF-HEALING INTEGRATION
+# ============================================================================
+
+self_healing_protocol:
+  enabled: true
+  validation_mode: "runtime_evidence_required"
+  
+  evidence_requirements:
+    - "Screenshot of test output"
+    - "Video file showing mouth tracking visualization"
+    - "JSON metrics file with actual numbers"
+    - "No simulated test results accepted"
+  
+  escalation_triggers:
+    - "Any gate fails 3 times"
+    - "Processing speed <10 FPS on Z8"
+    - "Detection rate <50% on baseline clip"
+    - "Sync drift >100ms average"
+  
+  recovery_actions:
+    - "Apply SHRP (Self-Healing Recovery Protocol)"
+    - "Collect diagnostic evidence"
+    - "Generate human-readable error report"
+    - "Suggest targeted fixes with code patches"
