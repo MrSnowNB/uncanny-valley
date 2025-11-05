@@ -349,21 +349,59 @@ class ChatStateManager:
                     "duration": audio_duration
                 }
             else:
-                # Handle case where audio generation failed - degrade gracefully
-                video_path = self.video_matcher.create_duration_matched_clip(
-                    emotion_state=video_state,
-                    target_duration=3.0  # Default short duration
-                )
+                # SHRP R2.1 Fix: Fallback TTS generation when primary method fails
+                audio_filename = f"response_{uuid.uuid4().hex[:8]}.wav"
+                audio_path = os.path.join("outputs/audio", audio_filename)
+                os.makedirs("outputs/audio", exist_ok=True)
 
-                video_url = f"/video/{os.path.basename(video_path)}" if video_path else "/video/idle-loop.mp4"
+                # Use pyttsx3 directly for TTS (SHRP critical fix)
+                import pyttsx3
+                tts_engine = pyttsx3.init()
+                tts_engine.save_to_file(ollama_response, audio_path)
+                tts_engine.runAndWait()
 
-                response = {
-                    "type": "ai_response",
-                    "audio_url": None,
-                    "video": video_url,
-                    "text": ollama_response,
-                    "duration": 3.0
-                }
+                # Verify file was created
+                if os.path.exists(audio_path) and os.path.getsize(audio_path) > 1000:
+                    audio_success_fixed = True
+                    self.event_emitter.emit_tts_event(
+                        EventType.TTS_COMPLETE,
+                        f"tts_fixed_{task_id}",
+                        {"audio_path": audio_path, "file_size": os.path.getsize(audio_path)}
+                    )
+                else:
+                    audio_success_fixed = False
+
+                if audio_success_fixed:
+                    # RICo Phase 1: Measure audio duration
+                    audio_duration = librosa.get_duration(filename=audio_path)
+
+                    # RICo Phase 1: Create duration-matched video
+                    video_path = self.video_matcher.create_duration_matched_clip(
+                        emotion_state=video_state,
+                        target_duration=audio_duration
+                    )
+
+                    response = {
+                        "type": "ai_response",
+                        "audio_url": f"/audio/{audio_filename}",
+                        "video": f"/ricovideos/{os.path.basename(video_path)}" if video_path else "/video/idle-loop.mp4",
+                        "text": ollama_response,
+                        "duration": audio_duration
+                    }
+                else:
+                    # Absolute fallback - no audio
+                    video_path = self.video_matcher.create_duration_matched_clip(
+                        emotion_state=video_state,
+                        target_duration=3.0
+                    )
+
+                    response = {
+                        "type": "ai_response",
+                        "audio_url": None,
+                        "video": f"/video/{os.path.basename(video_path)}" if video_path else "/video/idle-loop.mp4",
+                        "text": ollama_response,
+                        "duration": 3.0
+                    }
 
             # Log task completion
             self.logger.log_task_complete(task_id, {"response_type": response["type"], "has_audio": response["audio_url"] is not None})
