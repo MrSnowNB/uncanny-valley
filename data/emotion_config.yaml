@@ -18,7 +18,7 @@ emotion_mapping:
     description: "Welcome message, warm smile"
 
   neutral_speaking:
-    clip: "speaking-nuetral.mp4"
+    clip: "speaking-neutral.mp4"
     should_loop: false
     description: "Standard response delivery"
 
@@ -38,7 +38,7 @@ emotion_mapping:
     description: "Gentle closing gesture"
 
 # Fallback clip if emotion detection fails
-default_clip: "speaking-nuetral.mp4"
+default_clip: "speaking-neutral.mp4"
 
 # Base path for video clips
 clips_directory: "data/video_clips"

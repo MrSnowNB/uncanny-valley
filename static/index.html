@@ -282,8 +282,10 @@
                 videoElement.src = data.video;
                 videoElement.loop = false;  // Backend created exact-duration clip
                 videoElement.muted = true;
-                await videoElement.load();  // Ensure video loads
                 console.log('📹 RICo video loaded:', data.video);
+
+                // Don't autoplay - wait for user interaction
+                // This prevents "media resource not suitable" errors
             }
 
             // Load and play audio - handle null/empty values gracefully
