@@ -5,7 +5,7 @@ Tracks mouth region using OpenCV Haar cascades as MediaPipe alternative
 for Python 3.13 compatibility.
 """
 
-import cv2
+import cv2  # type: ignore
 import numpy as np
 from typing import Optional, Tuple, Dict
 import logging
@@ -21,8 +21,7 @@ class MouthROITracker:
         """Initialize OpenCV cascade classifiers"""
         # Load Haar cascade classifiers
         # Try multiple possible paths for Haar cascades
-        import cv2 as cv2_module  # Import for path resolution
-        cv2_path = os.path.dirname(cv2_module.__file__)
+        cv2_path = os.path.dirname(cv2.__file__)  # type: ignore
         possible_paths = [
             cv2_path.replace('__init__.py', 'data/haarcascades/'),
             '/usr/share/opencv4/haarcascades/',
@@ -38,13 +37,13 @@ class MouthROITracker:
                 break
 
         if cascade_file:
-            self.face_cascade = cv2.CascadeClassifier(cascade_file)
+            self.face_cascade = cv2.CascadeClassifier(cascade_file)  # type: ignore
         else:
             # Fallback: try to load from opencv-python package
             try:
-                import cv2.data
-                self.face_cascade = cv2.CascadeClassifier(
-                    cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+                import cv2.data  # type: ignore
+                self.face_cascade = cv2.CascadeClassifier(  # type: ignore
+                    cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'  # type: ignore
                 )
             except:
                 logger.warning("Could not load Haar cascade classifier")
@@ -70,8 +69,12 @@ class MouthROITracker:
                 - 'bbox': Bounding box (x, y, w, h)
                 - 'landmarks': Estimated landmarks
         """
+        if self.face_cascade is None:
+            logger.warning("Face cascade not loaded, cannot detect mouth ROI")
+            return None, 0.0
+
         # Convert to grayscale for detection
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  # type: ignore
 
         # Detect faces
         faces = self.face_cascade.detectMultiScale(
@@ -144,14 +147,14 @@ class MouthROITracker:
         # Draw face bounding box
         if 'face_bbox' in roi_data.get('landmarks', {}):
             fx, fy, fw, fh = roi_data['landmarks']['face_bbox']
-            cv2.rectangle(debug_frame, (fx, fy), (fx + fw, fy + fh), (255, 0, 0), 2)
+            cv2.rectangle(debug_frame, (fx, fy), (fx + fw, fy + fh), (255, 0, 0), 2)  # type: ignore
 
         # Draw mouth bounding box
         x, y, w, h = roi_data['bbox']
-        cv2.rectangle(debug_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        cv2.rectangle(debug_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)  # type: ignore
 
         # Draw mouth polygon
-        cv2.polylines(debug_frame, [roi_data['polygon']], True, (0, 0, 255), 2)
+        cv2.polylines(debug_frame, [roi_data['polygon']], True, (0, 0, 255), 2)  # type: ignore
 
         return debug_frame
 
@@ -164,7 +167,7 @@ if __name__ == "__main__":
     tracker = MouthROITracker()
 
     # Test on a video frame
-    cap = cv2.VideoCapture("data/video_clips/speaking-neutral.mp4")
+    cap = cv2.VideoCapture("data/video_clips/speaking-neutral.mp4")  # type: ignore
     if cap.isOpened():
         ret, frame = cap.read()
         if ret:

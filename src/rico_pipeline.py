@@ -186,7 +186,7 @@ class RicoPipeline:
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
         # Write video
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # type: ignore
         out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
 
         for frame in frames:

@@ -1,10 +1,10 @@
 {
-  "checkpoint_id": "checkpoint_20251105_153746_55a8dfe0",
-  "timestamp": "2025-11-05T15:37:46.730834+00:00",
-  "hash": "621a0892ec762ce19c7b9b3107bc2073c413040a9b69acfa91f3c9934635b9eb",
+  "checkpoint_id": "checkpoint_20251105_154440_7d2f259d",
+  "timestamp": "2025-11-05T15:44:40.465759+00:00",
+  "hash": "d369630d4e2cbb712495ad88050ee2c6b8f60dde46db5709189e56c7d12d5d5a",
   "metadata": {
     "context": "system_startup",
-    "session_id": "a86441c8-3818-4977-930e-1597a90706da",
+    "session_id": "9876c52b-c5c1-4a5d-9bb0-7c074ad5c5b2",
     "component": "chat_server"
   },
   "state": {
@@ -15,6 +15,6 @@
     "recovery_metrics": {},
     "checkpoint_version": "1.0",
     "last_checkpoint_context": "system_startup",
-    "timestamp": "2025-11-05T15:37:46.730744+00:00"
+    "timestamp": "2025-11-05T15:44:40.465632+00:00"
   }
 }

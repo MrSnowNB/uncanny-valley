@@ -53,7 +53,12 @@ class PhonemeAligner:
 
         # Ensure we have a string
         if isinstance(phonemes_result, list):
-            phonemes_str = ' '.join(phonemes_result)
+            # Handle different phonemize output formats
+            if phonemes_result and isinstance(phonemes_result[0], (list, tuple)):
+                # Flatten nested structure
+                phonemes_str = ' '.join([' '.join(item) if isinstance(item, (list, tuple)) else str(item) for item in phonemes_result])
+            else:
+                phonemes_str = ' '.join(str(item) for item in phonemes_result)
         else:
             phonemes_str = str(phonemes_result)
 
