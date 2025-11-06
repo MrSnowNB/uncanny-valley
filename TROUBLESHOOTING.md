@@ -52,6 +52,16 @@ Last Updated: 2025-11-06
 
 ---
 
+## Mouth Tracker Test Failure - No Face Detection
+
+**Context**: TASK 2A.2 - Testing MouthROITracker standalone
+**Symptom**: Test fails with detection rate 0.0%, all frames show "Mouth occluded (confidence: 0.00)"
+**Error Snippet**: AssertionError: Detection rate too low: 0.0%
+**Probable Cause**: Test video does not contain detectable faces, or video quality/compression affects MediaPipe
+**Quick Fix**: Try different video clip, or lower min_detection_confidence to 0.3
+**Permanent Fix**: Use videos with clear, well-lit faces for testing
+**Prevention**: Verify test videos contain detectable faces before claiming success
+
 ## Fallback Path Not Working
 
 **Context**: Phase 2 fails but Phase 1 doesn't activate

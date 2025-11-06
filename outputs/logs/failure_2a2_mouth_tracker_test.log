@@ -1,0 +1,13 @@
+TASK 2A.2 FAILURE: Mouth Tracker Test Failed - No Face Detection
+Date: Thu 06 Nov 2025 08:44:10 AM EST
+Video tested: data/video_clips/speaking-neutral.mp4
+Frames processed: 30
+Detection rate: 0.0%
+Avg confidence: 0.00
+All frames: 'Mouth occluded (confidence: 0.00)'
+Possible causes:
+- Video does not contain visible faces
+- Video quality too low for MediaPipe detection
+- MediaPipe confidence threshold too high (currently 0.5)
+- Video compression affects face detection
+Root cause: MediaPipe Face Mesh cannot detect faces in the test video
