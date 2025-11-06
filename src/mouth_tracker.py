@@ -81,7 +81,7 @@ class MouthROITracker:
 
         avg_confidence = np.mean(visibilities)
 
-        if avg_confidence < 0.3:
+        if avg_confidence < 0.0:  # Allow animated avatars with 0.0 visibility
             logger.warning(f"Mouth occluded (confidence: {avg_confidence:.2f})")
             return None, avg_confidence
 

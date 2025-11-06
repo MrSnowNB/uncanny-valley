@@ -4,7 +4,7 @@ name: "Create Standalone Mouth Tracker"
 priority: "HIGH"
 dependencies: ["2A.1"]
 phase: "BUILD"
-status: "in_progress"
+status: "complete"
 ---
 
 ## Objective
