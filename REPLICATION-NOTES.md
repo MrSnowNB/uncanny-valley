@@ -54,5 +54,5 @@ None documented yet.
 
 - MediaPipe installation fails on Python 3.13+
 - Solution: Use Python 3.10 or 3.11
-- Mouth tracker test fails with 0.0% detection rate
-- Solution: Use videos with clear, detectable faces
+- Mouth tracker test fails with 0.0% detection rate on existing video clips
+- Solution: Use videos with clear, detectable human faces (existing clips may be animated avatars)

@@ -52,15 +52,28 @@ Last Updated: 2025-11-06
 
 ---
 
+## 0% Detection Rate - Systemic Face Detection Failure
+
+**Context:** Any pipeline using OpenCV+MediaPipe fails to detect any faces, even on clean sample video.
+**Symptom:** 0.0% detection, no exceptions. MediaPipe reports faces found but visibility confidence is 0.0.
+**Probable Causes:**
+- Video file/path mismatch or corrupt
+- OpenCV not reading video frames properly (often all-black)
+- MediaPipe face mesh not initialized; dependency error
+- Frame/image dtype or shape mismatch
+- **Test video contains animated avatars (not real faces)** - visibility confidence = 0.0
+**Quick Fix:** Print and save raw frames, test with known image file, step-by-step debugging to isolate problem.
+**Permanent Fix:** Standardize lab validation step on an image known to work for MediaPipe on your environment.
+
 ## Mouth Tracker Test Failure - No Face Detection
 
 **Context**: TASK 2A.2 - Testing MouthROITracker standalone
 **Symptom**: Test fails with detection rate 0.0%, all frames show "Mouth occluded (confidence: 0.00)"
 **Error Snippet**: AssertionError: Detection rate too low: 0.0%
-**Probable Cause**: Test video does not contain detectable faces, or video quality/compression affects MediaPipe
-**Quick Fix**: Try different video clip, or lower min_detection_confidence to 0.3
-**Permanent Fix**: Use videos with clear, well-lit faces for testing
-**Prevention**: Verify test videos contain detectable faces before claiming success
+**Probable Cause**: Test videos contain animated avatars where MediaPipe face mesh visibility confidence = 0.0
+**Quick Fix**: Lower mouth visibility threshold from 0.3 to 0.0, or use videos with real human faces
+**Permanent Fix**: Adjust confidence thresholds for animated content, or source real face videos
+**Prevention**: Test MediaPipe visibility confidence directly, not just face detection
 
 ## Fallback Path Not Working
 

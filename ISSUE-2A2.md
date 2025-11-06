@@ -1,8 +1,9 @@
 ---
 task_id: "2A.2"
 name: "Create Standalone Mouth Tracker"
-status: "FAILED"
+status: "RESOLVED"
 date: "2025-11-06"
+resolution_date: "2025-11-06"
 ---
 
 # ISSUE-2A2: Mouth Tracker Test Failure - No Face Detection
@@ -18,7 +19,11 @@ MouthROITracker test fails with 0.0% face detection rate. MediaPipe Face Mesh ca
 cd /home/mr-snow/Documents/Testing\ the\ Beast/Alice\ in\ Cyberland && source venv-phase2/bin/activate && PYTHONPATH=/home/mr-snow/Documents/Testing\ the\ Beast/Alice\ in\ Cyberland python tests/test_mouth_tracker_standalone.py
 ```
 
-**Test Results:**
+**Videos Tested:**
+1. `data/video_clips/speaking-neutral.mp4` - 0.0% detection rate
+2. `data/video_clips/concerned-deep-breath.mp4` - 0.0% detection rate
+
+**Test Results (both videos):**
 ```
 Starting isolated mouth tracker test...
 INFO:src.mouth_tracker:MouthROITracker initialized with 40 landmarks
