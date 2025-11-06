@@ -1,0 +1,87 @@
+=== VisemeMapper Comprehensive Test - 2025-11-06 09:38:14.515330 ===
+
+
+=== Test Case: Basic Vowels ===
+Text: She ate ice cream
+Phonemes: 10
+
+Viseme 0: IH (0.000-0.100)
+Viseme 1: IY (0.100-0.300)
+Viseme 2: EY (0.400-0.600)
+Viseme 3: UH (0.600-0.700)
+Viseme 4: AY (0.800-1.000)
+Viseme 5: IH (1.000-1.100)
+Viseme 6: UH (1.100-1.200)
+Viseme 7: ER (1.200-1.300)
+Viseme 8: IY (1.300-1.500)
+Viseme 9: UH (1.500-1.600)
+Sequence validation: PASS
+
+
+=== Test Case: Consonants ===
+Text: The quick brown fox
+Phonemes: 14
+
+Viseme 0: AH (0.000-0.100)
+Viseme 1: AH (0.100-0.200)
+Viseme 2: UH (0.300-0.400)
+Viseme 3: UW (0.400-0.500)
+Viseme 4: IH (0.500-0.600)
+Viseme 5: UH (0.600-0.700)
+Viseme 6: UH (0.800-0.900)
+Viseme 7: ER (0.900-1.000)
+Viseme 8: AW (1.000-1.200)
+Viseme 9: AH (1.200-1.300)
+Viseme 10: UH (1.400-1.500)
+Viseme 11: AA (1.500-1.700)
+Viseme 12: UH (1.700-1.800)
+Viseme 13: IH (1.800-1.900)
+Sequence validation: PASS
+
+
+=== Test Case: Diphthongs ===
+Text: How now brown cow
+Phonemes: 10
+
+Viseme 0: UH (0.000-0.100)
+Viseme 1: AW (0.100-0.300)
+Viseme 2: AH (0.400-0.500)
+Viseme 3: AW (0.500-0.700)
+Viseme 4: UH (0.800-0.900)
+Viseme 5: ER (0.900-1.000)
+Viseme 6: AW (1.000-1.200)
+Viseme 7: AH (1.200-1.300)
+Viseme 8: UH (1.400-1.500)
+Viseme 9: AW (1.500-1.700)
+Sequence validation: PASS
+
+
+=== Edge Case: Empty Input ===
+Input: ''
+Generated 0 visemes
+
+=== Edge Case: Whitespace Only ===
+Input: '   '
+Generated 0 visemes
+
+=== Edge Case: Non-English Characters ===
+Input: 'Hello 世界 🌍'
+Generated 2 visemes
+  0: {'viseme': 'EH', 'start': 0.0, 'end': 0.3, 'duration': 0.3}
+  1: {'viseme': 'AH', 'start': 0.3, 'end': 0.6, 'duration': 0.3}
+
+=== Edge Case: Numbers and Symbols ===
+Input: 'Test 123!@#'
+Generated 2 visemes
+  0: {'viseme': 'EH', 'start': 0.0, 'end': 0.3, 'duration': 0.3}
+  1: {'viseme': 'AH', 'start': 0.3, 'end': 0.6, 'duration': 0.3}
+
+=== Edge Case: Very Long Text ===
+Input: 'This is a very long sentence that should test the limits of our text processing capabilities and ens...'
+Generated 31 visemes
+  0: {'viseme': 'IH', 'start': 0.0, 'end': 0.3, 'duration': 0.3}
+  1: {'viseme': 'IH', 'start': 0.3, 'end': 0.6, 'duration': 0.3}
+  2: {'viseme': 'AH', 'start': 0.6, 'end': 0.8999999999999999, 'duration': 0.3}
+  3: {'viseme': 'EH', 'start': 0.8999999999999999, 'end': 1.2, 'duration': 0.3}
+  4: {'viseme': 'AH', 'start': 1.2, 'end': 1.5, 'duration': 0.3}
+  ... and 26 more
