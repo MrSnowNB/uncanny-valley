@@ -213,14 +213,19 @@ class RicoPipeline:
                 logger.debug("No mouth detected in frame")
                 return frame
 
-            # For now, we'll just composite the detected mouth back onto itself
-            # In a full implementation, this would use viseme-specific mouth shapes
+            # Extract mouth ROI and position
             mouth_roi = roi_data['roi']
             mouth_position = (roi_data['bbox'][0], roi_data['bbox'][1])
 
-            # Composite mouth back onto frame
-            result_frame = self.compositor.composite_mouth_roi(
-                frame, mouth_roi, mouth_position
+            # Get viseme symbol for this frame
+            viseme_symbol = viseme.get('viseme', 'AH') if viseme else 'AH'
+
+            # Composite mouth with viseme-specific transformation
+            result_frame = self.compositor.composite_mouth_with_viseme(
+                base_frame=frame,
+                mouth_roi=mouth_roi,
+                mouth_position=mouth_position,
+                viseme=viseme_symbol
             )
 
             self.success_count += 1

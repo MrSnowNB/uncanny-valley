@@ -169,7 +169,99 @@ def process_video_with_rico(audio_path: str, phoneme_data: List[Dict], test_phra
     print(f"📁 Output: {result_path}")
     print(f"🎞️  Frames processed: {stats['total_frames']}")
     print(".2f")
+
+    # DEBUG: Add frame-by-frame analysis
+    print("\n🔍 DEBUG: Analyzing frame differences...")
+    analyze_frame_differences(video_path, result_path)
+
+    # DEBUG: Show viseme sequence
+    print("\n🔍 DEBUG: Viseme sequence analysis...")
+    show_viseme_sequence(test_phrase)
+
     return result_path
+
+
+def analyze_frame_differences(original_video: str, processed_video: str):
+    """Analyze pixel differences between original and processed frames"""
+
+    # Open both videos
+    orig_cap = cv2.VideoCapture(original_video)
+    proc_cap = cv2.VideoCapture(processed_video)
+
+    if not orig_cap.isOpened() or not proc_cap.isOpened():
+        print("❌ Could not open videos for comparison")
+        return
+
+    total_frames = min(
+        int(orig_cap.get(cv2.CAP_PROP_FRAME_COUNT)),
+        int(proc_cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    )
+
+    total_pixel_diff = 0
+    changed_frames = 0
+    max_diff = 0
+
+    print(f"Comparing {total_frames} frames...")
+
+    for i in range(total_frames):
+        orig_ret, orig_frame = orig_cap.read()
+        proc_ret, proc_frame = proc_cap.read()
+
+        if not orig_ret or not proc_ret:
+            break
+
+        # Calculate pixel difference
+        diff = cv2.absdiff(orig_frame, proc_frame)
+        pixel_diff = np.sum(diff)
+
+        total_pixel_diff += pixel_diff
+        max_diff = max(max_diff, pixel_diff)
+
+        if pixel_diff > 100:  # Threshold for "changed"
+            changed_frames += 1
+
+        # Log every 10th frame
+        if i % 10 == 0:
+            print(f"Frame {i:3d}: Pixel diff = {pixel_diff:8d}")
+
+    orig_cap.release()
+    proc_cap.release()
+
+    avg_diff = total_pixel_diff / total_frames if total_frames > 0 else 0
+    change_percentage = (changed_frames / total_frames) * 100 if total_frames > 0 else 0
+
+    print("\n📊 Frame Difference Analysis:")
+    print(f"   Total frames: {total_frames}")
+    print(f"   Changed frames: {changed_frames} ({change_percentage:.1f}%)")
+    print(f"   Average pixel diff: {avg_diff:.0f}")
+    print(f"   Maximum pixel diff: {max_diff}")
+
+    if changed_frames == 0:
+        print("❌ CRITICAL: NO FRAMES CHANGED! Compositing is not working.")
+    elif change_percentage < 5:
+        print("⚠️  WARNING: Very few frames changed (<5%). Mouth sync may not be visible.")
+    else:
+        print("✅ Frames are being modified - compositing appears to be working.")
+
+
+def show_viseme_sequence(text: str):
+    """Show the viseme sequence that would be generated for the text"""
+
+    # Import here to avoid circular imports
+    from src.viseme_mapper import VisemeMapper
+
+    mapper = VisemeMapper()
+    visemes = mapper.text_to_visemes(text)
+
+    print(f"Text: '{text}'")
+    print(f"Generated {len(visemes)} visemes:")
+
+    for i, viseme in enumerate(visemes):
+        print(f"  {i}: '{viseme['viseme']}' ({viseme['start']:.2f}s - {viseme['end']:.2f}s)")
+
+    # Show unique visemes
+    unique_visemes = set(v['viseme'] for v in visemes)
+    print(f"Unique visemes used: {sorted(unique_visemes)}")
 
 
 def verify_output_video(video_path: str, expected_duration: float):

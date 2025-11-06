@@ -56,3 +56,19 @@ None documented yet.
 - Solution: Use Python 3.10 or 3.11
 - Mouth tracker test fails with 0.0% detection rate on existing video clips
 - Solution: Use videos with clear, detectable human faces (existing clips may be animated avatars)
+
+---
+
+## RICo Pipeline Integration Failure (2025-11-06 11:50am)
+
+**Issue**: Integration test generates video but no mouth sync applied
+**Agent behavior**: Claimed success based on video file existence, not content
+**Human verification**: Caught the bug - mouth static in output
+
+**Root cause investigation needed:**
+- Verify compositor is being called per-frame
+- Check if compositor is actually modifying frames
+- Confirm viseme mapping producing different outputs per phoneme
+
+**Lesson learned**: File existence ≠ correct content
+**Prevention**: Require visual diff check or frame comparison in tests

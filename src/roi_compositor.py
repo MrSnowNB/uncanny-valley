@@ -197,6 +197,111 @@ class ROICompositor:
 
         return True
 
+    def composite_mouth_with_viseme(self,
+                                   base_frame: np.ndarray,
+                                   mouth_roi: np.ndarray,
+                                   mouth_position: Tuple[int, int],
+                                   viseme: str,
+                                   mouth_mask: Optional[np.ndarray] = None) -> np.ndarray:
+        """
+        Composite mouth ROI with viseme-specific modifications
+
+        Args:
+            base_frame: Base video frame (BGR)
+            mouth_roi: Mouth region to composite (BGR)
+            mouth_position: (x, y) top-left position on base frame
+            viseme: Viseme symbol (e.g., 'AA', 'IH', 'OW')
+            mouth_mask: Optional alpha mask for mouth ROI
+
+        Returns:
+            Composited frame with viseme-modified mouth
+        """
+        if base_frame is None or mouth_roi is None:
+            logger.warning("Invalid input: base_frame or mouth_roi is None")
+            return base_frame
+
+        # Apply viseme-specific transformation to mouth ROI
+        modified_mouth_roi = self._apply_viseme_transformation(mouth_roi, viseme)
+
+        # Composite the modified mouth
+        return self.composite_mouth_roi(
+            base_frame=base_frame,
+            mouth_roi=modified_mouth_roi,
+            mouth_position=mouth_position,
+            mouth_mask=mouth_mask
+        )
+
+    def _apply_viseme_transformation(self, mouth_roi: np.ndarray, viseme: str) -> np.ndarray:
+        """
+        Apply viseme-specific transformation to mouth ROI
+
+        Args:
+            mouth_roi: Original mouth ROI
+            viseme: Viseme symbol
+
+        Returns:
+            Transformed mouth ROI
+        """
+        # Create a copy to modify
+        transformed_roi = mouth_roi.copy()
+
+        # Define viseme-specific transformations
+        viseme_transforms = {
+            # Wide open mouth vowels
+            'AA': {'scale_x': 1.2, 'scale_y': 1.3, 'brightness': 1.1},  # father
+            'AO': {'scale_x': 1.1, 'scale_y': 1.2, 'brightness': 1.0},  # lot
+
+            # Rounded vowels
+            'OW': {'scale_x': 0.9, 'scale_y': 1.1, 'brightness': 0.9},  # boat
+            'UW': {'scale_x': 0.8, 'scale_y': 1.0, 'brightness': 0.8},  # boot
+
+            # Narrow vowels
+            'IH': {'scale_x': 0.7, 'scale_y': 0.8, 'brightness': 0.9},  # bit
+            'IY': {'scale_x': 0.6, 'scale_y': 0.7, 'brightness': 1.0},  # beat
+
+            # Mid vowels
+            'EH': {'scale_x': 0.9, 'scale_y': 0.9, 'brightness': 1.0},  # bed
+            'AH': {'scale_x': 1.0, 'scale_y': 1.0, 'brightness': 1.0},  # hut
+
+            # Default for consonants and unknown
+            'DEFAULT': {'scale_x': 0.8, 'scale_y': 0.6, 'brightness': 0.7}
+        }
+
+        # Get transformation parameters
+        transform = viseme_transforms.get(viseme, viseme_transforms['DEFAULT'])
+
+        scale_x = transform['scale_x']
+        scale_y = transform['scale_y']
+        brightness = transform['brightness']
+
+        # Apply scaling transformation
+        h, w = transformed_roi.shape[:2]
+        new_w = int(w * scale_x)
+        new_h = int(h * scale_y)
+
+        # Resize the mouth ROI
+        if new_w > 0 and new_h > 0:
+            transformed_roi = cv2.resize(transformed_roi, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+
+            # Pad back to original size if needed
+            if new_h < h or new_w < w:
+                pad_top = (h - new_h) // 2
+                pad_bottom = h - new_h - pad_top
+                pad_left = (w - new_w) // 2
+                pad_right = w - new_w - pad_left
+
+                transformed_roi = cv2.copyMakeBorder(
+                    transformed_roi,
+                    pad_top, pad_bottom, pad_left, pad_right,
+                    cv2.BORDER_CONSTANT, value=[0, 0, 0]
+                )
+
+        # Apply brightness modification
+        if brightness != 1.0:
+            transformed_roi = cv2.convertScaleAbs(transformed_roi, alpha=brightness, beta=0)
+
+        return transformed_roi
+
     def get_compositing_stats(self,
                              base_frame: np.ndarray,
                              composited_frame: np.ndarray) -> Dict:
