@@ -1,0 +1,131 @@
+=== Mouth Tracker Debug Log - 2025-11-06 09:22:40.701839 ===
+
+Frame 0: ret=True, shape=(688, 464, 3), dtype=uint8
+Saved first frame: /home/mr-snow/Documents/Testing the Beast/Alice in Cyberland/outputs/debug/first_frame.jpg
+Frame 0: RGB shape=(688, 464, 3), mean=140.30
+Frame 0: MediaPipe results - multi_face_landmarks: True
+Frame 0: ROI data=True, confidence=0.000
+Frame 1: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 1: RGB shape=(688, 464, 3), mean=140.25
+Frame 1: MediaPipe results - multi_face_landmarks: True
+Frame 1: ROI data=True, confidence=0.000
+Frame 2: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 2: RGB shape=(688, 464, 3), mean=140.24
+Frame 2: MediaPipe results - multi_face_landmarks: True
+Frame 2: ROI data=True, confidence=0.000
+Frame 3: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 3: RGB shape=(688, 464, 3), mean=140.31
+Frame 3: MediaPipe results - multi_face_landmarks: True
+Frame 3: ROI data=True, confidence=0.000
+Frame 4: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 4: RGB shape=(688, 464, 3), mean=140.15
+Frame 4: MediaPipe results - multi_face_landmarks: True
+Frame 4: ROI data=True, confidence=0.000
+Frame 5: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 5: RGB shape=(688, 464, 3), mean=140.35
+Frame 5: MediaPipe results - multi_face_landmarks: True
+Frame 5: ROI data=True, confidence=0.000
+Frame 6: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 6: RGB shape=(688, 464, 3), mean=140.44
+Frame 6: MediaPipe results - multi_face_landmarks: True
+Frame 6: ROI data=True, confidence=0.000
+Frame 7: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 7: RGB shape=(688, 464, 3), mean=140.59
+Frame 7: MediaPipe results - multi_face_landmarks: True
+Frame 7: ROI data=True, confidence=0.000
+Frame 8: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 8: RGB shape=(688, 464, 3), mean=140.50
+Frame 8: MediaPipe results - multi_face_landmarks: True
+Frame 8: ROI data=True, confidence=0.000
+Frame 9: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 9: RGB shape=(688, 464, 3), mean=140.70
+Frame 9: MediaPipe results - multi_face_landmarks: True
+Frame 9: ROI data=True, confidence=0.000
+Frame 10: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 10: RGB shape=(688, 464, 3), mean=140.66
+Frame 10: MediaPipe results - multi_face_landmarks: True
+Frame 10: ROI data=True, confidence=0.000
+Frame 11: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 11: RGB shape=(688, 464, 3), mean=140.88
+Frame 11: MediaPipe results - multi_face_landmarks: True
+Frame 11: ROI data=True, confidence=0.000
+Frame 12: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 12: RGB shape=(688, 464, 3), mean=140.82
+Frame 12: MediaPipe results - multi_face_landmarks: True
+Frame 12: ROI data=True, confidence=0.000
+Frame 13: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 13: RGB shape=(688, 464, 3), mean=141.10
+Frame 13: MediaPipe results - multi_face_landmarks: True
+Frame 13: ROI data=True, confidence=0.000
+Frame 14: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 14: RGB shape=(688, 464, 3), mean=141.10
+Frame 14: MediaPipe results - multi_face_landmarks: True
+Frame 14: ROI data=True, confidence=0.000
+Frame 15: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 15: RGB shape=(688, 464, 3), mean=141.35
+Frame 15: MediaPipe results - multi_face_landmarks: True
+Frame 15: ROI data=True, confidence=0.000
+Frame 16: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 16: RGB shape=(688, 464, 3), mean=141.27
+Frame 16: MediaPipe results - multi_face_landmarks: True
+Frame 16: ROI data=True, confidence=0.000
+Frame 17: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 17: RGB shape=(688, 464, 3), mean=141.46
+Frame 17: MediaPipe results - multi_face_landmarks: True
+Frame 17: ROI data=True, confidence=0.000
+Frame 18: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 18: RGB shape=(688, 464, 3), mean=141.46
+Frame 18: MediaPipe results - multi_face_landmarks: True
+Frame 18: ROI data=True, confidence=0.000
+Frame 19: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 19: RGB shape=(688, 464, 3), mean=141.65
+Frame 19: MediaPipe results - multi_face_landmarks: True
+Frame 19: ROI data=True, confidence=0.000
+Frame 20: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 20: RGB shape=(688, 464, 3), mean=141.51
+Frame 20: MediaPipe results - multi_face_landmarks: True
+Frame 20: ROI data=True, confidence=0.000
+Frame 21: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 21: RGB shape=(688, 464, 3), mean=141.79
+Frame 21: MediaPipe results - multi_face_landmarks: True
+Frame 21: ROI data=True, confidence=0.000
+Frame 22: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 22: RGB shape=(688, 464, 3), mean=141.75
+Frame 22: MediaPipe results - multi_face_landmarks: True
+Frame 22: ROI data=True, confidence=0.000
+Frame 23: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 23: RGB shape=(688, 464, 3), mean=141.86
+Frame 23: MediaPipe results - multi_face_landmarks: True
+Frame 23: ROI data=True, confidence=0.000
+Frame 24: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 24: RGB shape=(688, 464, 3), mean=141.72
+Frame 24: MediaPipe results - multi_face_landmarks: True
+Frame 24: ROI data=True, confidence=0.000
+Frame 25: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 25: RGB shape=(688, 464, 3), mean=141.97
+Frame 25: MediaPipe results - multi_face_landmarks: True
+Frame 25: ROI data=True, confidence=0.000
+Frame 26: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 26: RGB shape=(688, 464, 3), mean=141.96
+Frame 26: MediaPipe results - multi_face_landmarks: True
+Frame 26: ROI data=True, confidence=0.000
+Frame 27: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 27: RGB shape=(688, 464, 3), mean=142.05
+Frame 27: MediaPipe results - multi_face_landmarks: True
+Frame 27: ROI data=True, confidence=0.000
+Frame 28: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 28: RGB shape=(688, 464, 3), mean=141.93
+Frame 28: MediaPipe results - multi_face_landmarks: True
+Frame 28: ROI data=True, confidence=0.000
+Frame 29: ret=True, shape=(688, 464, 3), dtype=uint8
+Frame 29: RGB shape=(688, 464, 3), mean=142.14
+Frame 29: MediaPipe results - multi_face_landmarks: True
+Frame 29: ROI data=True, confidence=0.000
+
+=== TEST SUMMARY ===
+Processed 30 frames
+Frames with mouth: 30
+Frames without face: 0
+Detection rate: 100.0%
+Avg confidence: 0.000
+Timestamp: 2025-11-06 09:22:41.472929
