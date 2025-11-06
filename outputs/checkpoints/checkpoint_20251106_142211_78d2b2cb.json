@@ -1,0 +1,20 @@
+{
+  "checkpoint_id": "checkpoint_20251106_142211_78d2b2cb",
+  "timestamp": "2025-11-06T14:22:11.566874+00:00",
+  "hash": "0fb847f24578f504aa4e27e49ab554d994ea63fa4c8d208847659dfa0bfa34e6",
+  "metadata": {
+    "context": "system_startup",
+    "session_id": "504f7410-16db-41be-bd04-3b3f75be9f28",
+    "component": "chat_server"
+  },
+  "state": {
+    "current_video_state": "idle",
+    "active_clients_count": 0,
+    "total_messages_processed": 0,
+    "last_message_timestamp": null,
+    "recovery_metrics": {},
+    "checkpoint_version": "1.0",
+    "last_checkpoint_context": "system_startup",
+    "timestamp": "2025-11-06T14:22:11.566806+00:00"
+  }
+}
