@@ -9,10 +9,14 @@ import cv2
 import numpy as np
 import json
 import os
+import sys
 import time
 import wave
 from datetime import datetime
 from typing import List, Dict, Any
+
+# Add current directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import RICo components
 from src.rico_pipeline import RicoPipeline
@@ -112,7 +116,7 @@ def save_phoneme_data(phoneme_data: List[Dict], output_path: str):
     print(f"💾 Phoneme data saved: {output_path}")
 
 
-def process_video_with_rico(audio_path: str, phoneme_data: List[Dict]) -> str:
+def process_video_with_rico(audio_path: str, phoneme_data: List[Dict], test_phrase: str) -> str:
     """
     Process video through RICo pipeline.
 
@@ -129,7 +133,7 @@ def process_video_with_rico(audio_path: str, phoneme_data: List[Dict]) -> str:
     pipeline = RicoPipeline()
 
     # Use neutral speaking clip as base
-    video_path = "static/video_clips/speaking-neutral.mp4"
+    video_path = "data/video_clips/speaking-neutral.mp4"
 
     if not os.path.exists(video_path):
         raise FileNotFoundError(f"Base video not found: {video_path}")
@@ -152,7 +156,7 @@ def process_video_with_rico(audio_path: str, phoneme_data: List[Dict]) -> str:
     result_path = pipeline.process_video_with_audio(
         video_path=video_path,
         audio_path=audio_path,
-        text="",  # Text already processed into phonemes
+        text=test_phrase,  # Pass the actual text for viseme generation
         output_path=output_path
     )
 
@@ -170,8 +174,9 @@ def process_video_with_rico(audio_path: str, phoneme_data: List[Dict]) -> str:
 
 def verify_output_video(video_path: str, expected_duration: float):
     """Verify the output video was created correctly."""
-    print("
-🔍 Verifying output video..."    if not os.path.exists(video_path):
+    print("\n🔍 Verifying output video...")
+
+    if not os.path.exists(video_path):
         raise FileNotFoundError(f"Output video not created: {video_path}")
 
     # Check file size
@@ -215,7 +220,8 @@ def main():
         save_phoneme_data(phoneme_data, phoneme_json_path)
 
         # Step 2: Process video through RICo pipeline
-        output_video_path = process_video_with_rico(audio_path, phoneme_data)
+        test_phrase = "Hello, I'm Alice. This is a test of mouth synchronization."
+        output_video_path = process_video_with_rico(audio_path, phoneme_data, test_phrase)
 
         # Step 3: Verify output
         verify_output_video(output_video_path, audio_duration)
