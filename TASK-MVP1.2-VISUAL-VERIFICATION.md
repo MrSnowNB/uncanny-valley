@@ -16,10 +16,11 @@ Visually confirm that mouth movements in output video are synchronized with spee
 
 ## Generated Files to Verify
 
-**Demonstration Video:** `outputs/patent_demo_synced.mp4`
-- Size: 1.8MB
-- Duration: ~6 seconds
+**Demonstration Video:** `outputs/patent_demo_synced_with_audio.mp4`
+- Size: 1.7MB
+- Duration: ~3.5 seconds (video), ~3.6 seconds (audio)
 - Test phrase: "Hello, I'm Alice. This is a test of mouth synchronization."
+- **HAS AUDIO**: TTS synchronized with video mouth movements
 
 **Supporting Files:**
 - `outputs/audio/mvp_test.wav` - Generated TTS audio
@@ -31,11 +32,11 @@ Visually confirm that mouth movements in output video are synchronized with spee
 
 **Action:**
 ```bash
-# Open video in player
-vlc outputs/patent_demo_synced.mp4
+# Open video in player (WITH AUDIO)
+vlc outputs/patent_demo_synced_with_audio.mp4
 # or
-open outputs/patent_demo_synced.mp4  # Mac
-xdg-open outputs/patent_demo_synced.mp4  # Linux
+open outputs/patent_demo_synced_with_audio.mp4  # Mac
+xdg-open outputs/patent_demo_synced_with_audio.mp4  # Linux
 ```
 
 **Watch carefully for:**
@@ -49,7 +50,7 @@ xdg-open outputs/patent_demo_synced.mp4  # Linux
 **Action:** Extract key frames for inspection
 ```bash
 mkdir -p outputs/debug/frame_analysis
-ffmpeg -i outputs/patent_demo_synced.mp4 -vf "select='between(n\,0\,60)'" -vsync 0 outputs/debug/frame_analysis/frame_%04d.png
+ffmpeg -i outputs/patent_demo_synced_with_audio.mp4 -vf "select='between(n\,0\,60)'" -vsync 0 outputs/debug/frame_analysis/frame_%04d.png
 ```
 
 **Inspect frames 0, 15, 30, 45, 60:**
@@ -122,7 +123,7 @@ cat outputs/patent_demo_phonemes.json | jq '.'
 
 **Date:** 2025-11-06
 **Reviewer:** [Your name]
-**Video:** outputs/patent_demo_synced.mp4
+**Video:** outputs/patent_demo_synced_with_audio.mp4
 
 ## Mouth Synchronization Assessment
 
